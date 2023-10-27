@@ -1,4 +1,4 @@
-package org.wildfly.experimental.api.classpath.indexer;
+package org.wildfly.experimental.api.classpath.plugin;
 
 import java.util.HashSet;
 import java.util.Set;

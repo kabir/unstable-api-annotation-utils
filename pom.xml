@@ -22,9 +22,14 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
+        <!-- Normal dependencies -->
         <version.io.smallrye.jandex>3.1.5</version.io.smallrye.jandex>
         <version.org.apache.maven.core>3.3.9</version.org.apache.maven.core>
         <version.org.apache.maven.plugin-tools>3.7.0</version.org.apache.maven.plugin-tools>
+
+        <!-- Test dependencies -->
+        <version.junit>4.13.1</version.junit>
+        <version.org.jboss.shrinkwrap.shrinkwrap>1.2.6</version.org.jboss.shrinkwrap.shrinkwrap>
     </properties>
 
     <modules>
@@ -78,6 +83,22 @@
                 <scope>provided</scope>
             </dependency>
 
+
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${version.junit}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.shrinkwrap</groupId>
+                <artifactId>shrinkwrap-api</artifactId>
+                <version>${version.org.jboss.shrinkwrap.shrinkwrap}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.shrinkwrap</groupId>
+                <artifactId>shrinkwrap-impl-base</artifactId>
+                <version>${version.org.jboss.shrinkwrap.shrinkwrap}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

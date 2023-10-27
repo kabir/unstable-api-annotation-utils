@@ -29,26 +29,29 @@ public class JarAnnotationIndexer {
         this.excludedClasses = excludedClasses;
     }
 
-    public Set<String> scanForAnnotation() throws IOException {
+    public JarAnnotationIndexerResult scanForAnnotation() throws IOException {
         Set<String> foundClasses = new HashSet<>();
         Indexer indexer = new Indexer();
         Result result = JarIndexer.createJarIndex(file, indexer, false, true, false);
         Index index = result.getIndex();
 
         Collection<AnnotationInstance> annotations = index.getAnnotations(experimentalAnnotation);
-
+        JarAnnotationIndexerResult.ResultBuilder resultBuilder = JarAnnotationIndexerResult.builder(experimentalAnnotation);
         for (AnnotationInstance annotation : annotations) {
             if (annotation.target().kind() == AnnotationTarget.Kind.CLASS) {
                 ClassInfo classInfo = annotation.target().asClass();
-                if (!excludedClasses.contains(classInfo.name().toString())) {
-                    boolean isAnn = classInfo.isAnnotation();
-                    if (isAnn) {
-                        System.out.println(classInfo.name().toString());
-                        foundClasses.add(classInfo.name().toString());
+                String className = classInfo.name().toString();
+                if (!excludedClasses.contains(className)) {
+                    if (classInfo.isAnnotation()) {
+                        resultBuilder.addAnnotatedAnnotation(className);
+                    } else if (classInfo.isInterface()) {
+                        resultBuilder.addAnnotatedInterface(className);
+                    } else if (classInfo.isDeclaration()) {
+                        resultBuilder.addAnnotatedClass(className);
                     }
                 }
             }
         }
-        return foundClasses;
+        return resultBuilder.build();
     }
 }

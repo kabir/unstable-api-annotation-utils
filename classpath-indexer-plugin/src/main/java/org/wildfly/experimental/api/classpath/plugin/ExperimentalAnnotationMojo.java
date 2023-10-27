@@ -1,4 +1,4 @@
-package org.wildfly.experimental.api.classpath.indexer;
+package org.wildfly.experimental.api.classpath.plugin;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Dependency;
@@ -11,6 +11,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexer;
 
 import java.io.File;
 import java.io.IOException;
@@ -77,6 +78,6 @@ public class ExperimentalAnnotationMojo
 
     private void searchExperimentalAnnotation(Artifact artifact, Filter indexFilter) throws IOException {
         JarAnnotationIndexer indexer = new JarAnnotationIndexer(artifact.getFile(), indexFilter.getAnnotation(), indexFilter.getExcludedClasses());
-        foundClasses.addAll(indexer.scanForAnnotation());
+        foundClasses.addAll(indexer.scanForAnnotation().getAnnotatedAnnotations());
     }
 }
