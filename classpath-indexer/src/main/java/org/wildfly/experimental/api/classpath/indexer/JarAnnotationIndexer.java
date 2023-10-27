@@ -6,7 +6,10 @@ import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.Indexer;
 import org.jboss.jandex.JarIndexer;
+import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Result;
+import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.AnnotatedMethod;
+import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.ClassType;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,6 +53,34 @@ public class JarAnnotationIndexer {
                         resultBuilder.addAnnotatedClass(className);
                     }
                 }
+            } else if (annotation.target().kind() == AnnotationTarget.Kind.METHOD) {
+                MethodInfo methodInfo = annotation.target().asMethod();
+                ClassInfo classInfo = methodInfo.declaringClass();
+                String className = classInfo.name().toString();
+                if (!excludedClasses.contains(className)) {
+                    ClassType classType = null;
+                    if (classInfo.isAnnotation()) {
+                        classType = ClassType.ANNOTATION;
+                    } else if (classInfo.isInterface()) {
+                        classType = ClassType.INTERFACE;
+                    } else if (classInfo.isDeclaration()) {
+                        classType = ClassType.CLASS;
+                    } else {
+                        // TODO warn/error?
+                        // Continue for now
+                        continue;
+                    }
+                    AnnotatedMethod annotatedMethod = new AnnotatedMethod(
+                            className,
+                            classType,
+                            methodInfo.name(),
+                            methodInfo.descriptor());
+
+                    resultBuilder.addAnnotatedMethod(annotatedMethod);
+                    System.out.println(methodInfo);
+                }
+
+
             }
         }
         return resultBuilder.build();
