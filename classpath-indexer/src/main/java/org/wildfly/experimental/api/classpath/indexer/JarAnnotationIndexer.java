@@ -9,6 +9,7 @@ import org.jboss.jandex.Indexer;
 import org.jboss.jandex.JarIndexer;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Result;
+import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.AnnotatedConstructor;
 import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.AnnotatedField;
 import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.AnnotatedMethod;
 import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.ClassType;
@@ -60,25 +61,30 @@ public class JarAnnotationIndexer {
                 ClassInfo classInfo = methodInfo.declaringClass();
                 String className = classInfo.name().toString();
                 if (!excludedClasses.contains(className)) {
-                    ClassType classType = null;
-                    if (classInfo.isAnnotation()) {
-                        classType = ClassType.ANNOTATION;
-                    } else if (classInfo.isInterface()) {
-                        classType = ClassType.INTERFACE;
-                    } else if (classInfo.isDeclaration()) {
-                        classType = ClassType.CLASS;
+                    if (methodInfo.isConstructor()) {
+                        AnnotatedConstructor annotatedConstructor = new AnnotatedConstructor(className, methodInfo.descriptor());
+                        resultBuilder.addAnnotatedConstructor(annotatedConstructor);
                     } else {
-                        // TODO warn/error?
-                        // Continue for now
-                        continue;
-                    }
-                    AnnotatedMethod annotatedMethod = new AnnotatedMethod(
-                            className,
-                            classType,
-                            methodInfo.name(),
-                            methodInfo.descriptor());
+                        ClassType classType = null;
+                        if (classInfo.isAnnotation()) {
+                            classType = ClassType.ANNOTATION;
+                        } else if (classInfo.isInterface()) {
+                            classType = ClassType.INTERFACE;
+                        } else if (classInfo.isDeclaration()) {
+                            classType = ClassType.CLASS;
+                        } else {
+                            // TODO warn/error?
+                            // Continue for now
+                            continue;
+                        }
+                        AnnotatedMethod annotatedMethod = new AnnotatedMethod(
+                                className,
+                                classType,
+                                methodInfo.name(),
+                                methodInfo.descriptor());
 
-                    resultBuilder.addAnnotatedMethod(annotatedMethod);
+                        resultBuilder.addAnnotatedMethod(annotatedMethod);
+                    }
                 }
             } else if(annotation.target().kind() == AnnotationTarget.Kind.FIELD) {
                 FieldInfo fieldInfo = annotation.target().asField();

@@ -2,11 +2,13 @@ package org.wildfly.experimental.api.classpath.indexer;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.AnnotatedConstructor;
 import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.AnnotatedField;
 import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.AnnotatedMethod;
 import org.wildfly.experimental.api.classpath.indexer.classes.AnnotationWithExperimental;
 import org.wildfly.experimental.api.classpath.indexer.classes.AnnotationWithExperimentalMethods;
 import org.wildfly.experimental.api.classpath.indexer.classes.ClassWithExperimental;
+import org.wildfly.experimental.api.classpath.indexer.classes.ClassWithExperimentalConstructors;
 import org.wildfly.experimental.api.classpath.indexer.classes.ClassWithExperimentalFields;
 import org.wildfly.experimental.api.classpath.indexer.classes.ClassWithExperimentalMethods;
 import org.wildfly.experimental.api.classpath.indexer.classes.Experimental;
@@ -22,6 +24,15 @@ import static org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexe
 import static org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.ClassType.INTERFACE;
 
 public class JarAnnotationIndexerTestCase {
+
+    // These feel a bit like corner cases, especially for our first iteration
+    // TODO Method parameters
+    // TODO Method/Constructor parameters
+
+    // TODO These are more of a runtime check thing I think? The classes will have been annotated
+    // implemented interface
+    // Super class
+
 
     private static final String EXPERIMENTAL_ANNOTATION = Experimental.class.getName();
 
@@ -48,17 +59,17 @@ public class JarAnnotationIndexerTestCase {
         Assert.assertTrue(set.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), CLASS, "test", "()V")));
         Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), INTERFACE, "test", "(Ljava/lang/String;)V")));
         Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), INTERFACE, "test", "()V")));
+    }
+    @Test
+    public void testScanConstructorAnnotations() throws Exception {
+        File file = TestUtils.createJar(ClassWithExperimentalConstructors.class);
+        JarAnnotationIndexer indexer = new JarAnnotationIndexer(file, EXPERIMENTAL_ANNOTATION, Collections.emptySet());
+        JarAnnotationIndexerResult result = indexer.scanForAnnotation();
+        Set<AnnotatedConstructor> set = result.getAnnotatedConstructors();
+        Assert.assertEquals(2, set.size());
 
-
-        // TODO Constructor
-
-        // TODO Method parameters
-        // TODO Method/Constructor parameters
-
-        // TODO These are more of a runtime check thing I think? The classes will have been annotated
-        // implemented interface
-        // Super class
-
+        Assert.assertTrue(set.contains(new AnnotatedConstructor(ClassWithExperimentalConstructors.class.getName(), "(Ljava/lang/String;)V")));
+        Assert.assertTrue(set.contains(new AnnotatedConstructor(ClassWithExperimentalConstructors.class.getName(), "()V")));
     }
 
     @Test
