@@ -2,10 +2,12 @@ package org.wildfly.experimental.api.classpath.indexer;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.AnnotatedField;
 import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.AnnotatedMethod;
 import org.wildfly.experimental.api.classpath.indexer.classes.AnnotationWithExperimental;
 import org.wildfly.experimental.api.classpath.indexer.classes.AnnotationWithExperimentalMethods;
 import org.wildfly.experimental.api.classpath.indexer.classes.ClassWithExperimental;
+import org.wildfly.experimental.api.classpath.indexer.classes.ClassWithExperimentalFields;
 import org.wildfly.experimental.api.classpath.indexer.classes.ClassWithExperimentalMethods;
 import org.wildfly.experimental.api.classpath.indexer.classes.Experimental;
 import org.wildfly.experimental.api.classpath.indexer.classes.InterfaceWithExperimental;
@@ -47,15 +49,28 @@ public class JarAnnotationIndexerTestCase {
         Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), INTERFACE, "test", "(Ljava/lang/String;)V")));
         Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), INTERFACE, "test", "()V")));
 
-        // TODO Method parameters
-        // TODO Fields
 
-        // TODO implemented interface
-        // TODO Super class
         // TODO Constructor
+
+        // TODO Method parameters
         // TODO Method/Constructor parameters
+
+        // TODO These are more of a runtime check thing I think? The classes will have been annotated
+        // implemented interface
+        // Super class
+
     }
 
+    @Test
+    public void testScanFieldAnnotations() throws Exception {
+        File file = TestUtils.createJar(ClassWithExperimentalFields.class);
+        JarAnnotationIndexer indexer = new JarAnnotationIndexer(file, EXPERIMENTAL_ANNOTATION, Collections.emptySet());
+        JarAnnotationIndexerResult result = indexer.scanForAnnotation();
+        Set<AnnotatedField> set = result.getAnnotatedFields();
+        Assert.assertEquals(2, set.size());
+        Assert.assertTrue(set.contains(new AnnotatedField(ClassWithExperimentalFields.class.getName(), "fieldA")));
+        Assert.assertTrue(set.contains(new AnnotatedField(ClassWithExperimentalFields.class.getName(), "fieldB")));
+    }
 
 
     private void checkSet(Set<String> set, String... expected) {

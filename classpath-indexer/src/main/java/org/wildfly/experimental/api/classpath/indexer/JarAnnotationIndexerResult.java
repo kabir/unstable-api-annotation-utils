@@ -11,13 +11,15 @@ public class JarAnnotationIndexerResult {
     private final Set<String> annotatedAnnotations;
 
     private final Set<AnnotatedMethod> annotatedMethods;
+    private final Set<AnnotatedField> annotatedFields;
 
     private JarAnnotationIndexerResult(ResultBuilder builder) {
         this.annotationName = builder.annotationName;
         this.annotatedInterfaces = builder.annotatedInterfaces;
         this.annotatedClasses = builder.annotatedClasses;
         this.annotatedAnnotations = builder.annotatedAnnotations;
-        annotatedMethods = builder.annotatedMethods;
+        this.annotatedMethods = builder.annotatedMethods;
+        this.annotatedFields = builder.annotatedFields;
     }
 
     public String getAnnotationName() {
@@ -40,6 +42,10 @@ public class JarAnnotationIndexerResult {
         return annotatedMethods;
     }
 
+    public Set<AnnotatedField> getAnnotatedFields() {
+        return annotatedFields;
+    }
+
     static ResultBuilder builder(String annotationName) {
         return new ResultBuilder(annotationName);
     }
@@ -47,11 +53,12 @@ public class JarAnnotationIndexerResult {
     static class ResultBuilder {
         private final String annotationName;
 
-        private Set<String> annotatedInterfaces = new HashSet<>();
-        private Set<String> annotatedClasses = new HashSet<>();
-        private Set<String> annotatedAnnotations = new HashSet<>();
+        private final Set<String> annotatedInterfaces = new HashSet<>();
+        private final Set<String> annotatedClasses = new HashSet<>();
+        private final Set<String> annotatedAnnotations = new HashSet<>();
 
-        private Set<AnnotatedMethod> annotatedMethods = new HashSet<>();
+        private final Set<AnnotatedMethod> annotatedMethods = new HashSet<>();
+        private final Set<AnnotatedField> annotatedFields = new HashSet<>();
 
         public ResultBuilder(String annotationName) {
             this.annotationName = annotationName;
@@ -74,6 +81,11 @@ public class JarAnnotationIndexerResult {
 
         ResultBuilder addAnnotatedMethod(AnnotatedMethod method) {
             annotatedMethods.add(method);
+            return this;
+        }
+
+        ResultBuilder addAnnotatedField(AnnotatedField field) {
+            annotatedFields.add(field);
             return this;
         }
 
@@ -124,6 +136,30 @@ public class JarAnnotationIndexerResult {
         @Override
         public int hashCode() {
             return Objects.hash(className, classType, methodName, signature);
+        }
+    }
+
+    static class AnnotatedField {
+        private final String className;
+
+        private final String fieldName;
+
+        public AnnotatedField(String className, String fieldName) {
+            this.className = className;
+            this.fieldName = fieldName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof AnnotatedField)) return false;
+            AnnotatedField that = (AnnotatedField) o;
+            return Objects.equals(className, that.className) && Objects.equals(fieldName, that.fieldName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(className, fieldName);
         }
     }
 

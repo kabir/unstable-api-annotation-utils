@@ -7,7 +7,7 @@ public class ClassWithExperimentalMethods {
     }
 
     @Experimental
-    public void test(String s) {
+    public static void test(String s) {
 
     }
 

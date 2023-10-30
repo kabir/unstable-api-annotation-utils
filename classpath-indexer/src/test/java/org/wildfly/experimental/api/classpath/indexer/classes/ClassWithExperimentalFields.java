@@ -5,7 +5,7 @@ public class ClassWithExperimentalFields {
     String fieldA;
     
     @Experimental
-    String fieldB;
+    static String fieldB;
 
     String notAnnotated;
 }

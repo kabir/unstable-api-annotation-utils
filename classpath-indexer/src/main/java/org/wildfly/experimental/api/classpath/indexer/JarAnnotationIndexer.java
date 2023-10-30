@@ -3,11 +3,13 @@ package org.wildfly.experimental.api.classpath.indexer;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.FieldInfo;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.Indexer;
 import org.jboss.jandex.JarIndexer;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Result;
+import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.AnnotatedField;
 import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.AnnotatedMethod;
 import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.ClassType;
 
@@ -77,10 +79,15 @@ public class JarAnnotationIndexer {
                             methodInfo.descriptor());
 
                     resultBuilder.addAnnotatedMethod(annotatedMethod);
-                    System.out.println(methodInfo);
                 }
-
-
+            } else if(annotation.target().kind() == AnnotationTarget.Kind.FIELD) {
+                FieldInfo fieldInfo = annotation.target().asField();
+                ClassInfo classInfo = fieldInfo.declaringClass();
+                String className = classInfo.name().toString();
+                if (!excludedClasses.contains(className)) {
+                    AnnotatedField annotatedField = new AnnotatedField(className, fieldInfo.name());
+                    resultBuilder.addAnnotatedField(annotatedField);
+                }
             }
         }
         return resultBuilder.build();
