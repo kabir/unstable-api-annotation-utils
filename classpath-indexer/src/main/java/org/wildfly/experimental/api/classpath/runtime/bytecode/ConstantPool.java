@@ -4,6 +4,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -12,7 +14,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Copied from biz.aQute.bnd:biz.aQute.bnd.transform:6.4.0 which has an Apache License 2.0
  */
-public class ConstantPool {
+class ConstantPool {
     public static final int	CONSTANT_Utf8				= 1;
     public static final int	CONSTANT_Integer			= 3;
     public static final int	CONSTANT_Float				= 4;
@@ -97,6 +99,8 @@ public class ConstantPool {
     public static ConstantPool read(DataInput in) throws IOException {
         int constant_pool_count = in.readUnsignedShort();
         Object[] pool = new Object[constant_pool_count];
+        List<Integer> classInfoIndexes = new LinkedList<>();
+
         for (int index = 1; index < constant_pool_count; index++) {
             int tag = in.readUnsignedByte();
             switch (tag) {
