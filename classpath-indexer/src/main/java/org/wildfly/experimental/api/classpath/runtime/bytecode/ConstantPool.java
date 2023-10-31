@@ -191,19 +191,9 @@ public class ConstantPool {
         return constant.intern();
     }
 
-    static void writeUtf8Info(DataOutput out, String constant) throws IOException {
-        out.writeByte(CONSTANT_Utf8);
-        out.writeUTF(constant);
-    }
-
     static Integer readIntegerInfo(DataInput in) throws IOException {
         int constant = in.readInt();
         return constant;
-    }
-
-    static void writeIntegerInfo(DataOutput out, Integer constant) throws IOException {
-        out.writeByte(CONSTANT_Integer);
-        out.writeInt(constant);
     }
 
     static Float readFloatInfo(DataInput in) throws IOException {
@@ -211,19 +201,9 @@ public class ConstantPool {
         return constant;
     }
 
-    static void writeFloatInfo(DataOutput out, Float constant) throws IOException {
-        out.writeByte(CONSTANT_Float);
-        out.writeFloat(constant);
-    }
-
     static Long readLongInfo(DataInput in) throws IOException {
         long constant = in.readLong();
         return constant;
-    }
-
-    static void writeLongInfo(DataOutput out, Long constant) throws IOException {
-        out.writeByte(CONSTANT_Long);
-        out.writeLong(constant);
     }
 
     static Double readDoubleInfo(DataInput in) throws IOException {
@@ -231,15 +211,8 @@ public class ConstantPool {
         return constant;
     }
 
-    static void writeDoubleInfo(DataOutput out, Double constant) throws IOException {
-        out.writeByte(CONSTANT_Double);
-        out.writeDouble(constant);
-    }
-
     public interface Info {
         int tag();
-
-        void write(DataOutput out) throws IOException;
     }
 
     public static class ClassInfo implements Info {
@@ -257,12 +230,6 @@ public class ConstantPool {
         @Override
         public int tag() {
             return CONSTANT_Class;
-        }
-
-        @Override
-        public void write(DataOutput out) throws IOException {
-            out.writeByte(tag());
-            out.writeShort(class_index);
         }
 
         @Override
@@ -289,12 +256,6 @@ public class ConstantPool {
         }
 
         @Override
-        public void write(DataOutput out) throws IOException {
-            out.writeByte(tag());
-            out.writeShort(string_index);
-        }
-
-        @Override
         public String toString() {
             return "StringInfo:" + string_index;
         }
@@ -318,13 +279,6 @@ public class ConstantPool {
             int class_index = in.readUnsignedShort();
             int name_and_type_index = in.readUnsignedShort();
             return constructor.init(class_index, name_and_type_index);
-        }
-
-        @Override
-        public void write(DataOutput out) throws IOException {
-            out.writeByte(tag());
-            out.writeShort(class_index);
-            out.writeShort(name_and_type_index);
         }
     }
 
@@ -409,13 +363,6 @@ public class ConstantPool {
         }
 
         @Override
-        public void write(DataOutput out) throws IOException {
-            out.writeByte(tag());
-            out.writeShort(name_index);
-            out.writeShort(descriptor_index);
-        }
-
-        @Override
         public String toString() {
             return "NameAndTypeInfo:" + name_index + ":" + descriptor_index;
         }
@@ -451,13 +398,6 @@ public class ConstantPool {
         }
 
         @Override
-        public void write(DataOutput out) throws IOException {
-            out.writeByte(tag());
-            out.writeByte(reference_kind);
-            out.writeShort(reference_index);
-        }
-
-        @Override
         public String toString() {
             return "MethodHandleInfo:" + reference_kind + ":" + reference_index;
         }
@@ -478,12 +418,6 @@ public class ConstantPool {
         @Override
         public int tag() {
             return CONSTANT_MethodType;
-        }
-
-        @Override
-        public void write(DataOutput out) throws IOException {
-            out.writeByte(tag());
-            out.writeShort(descriptor_index);
         }
 
         @Override
@@ -512,12 +446,6 @@ public class ConstantPool {
             return constructor.init(bootstrap_method_attr_index, name_and_type_index);
         }
 
-        @Override
-        public void write(DataOutput out) throws IOException {
-            out.writeByte(tag());
-            out.writeShort(bootstrap_method_attr_index);
-            out.writeShort(name_and_type_index);
-        }
     }
 
     public static class DynamicInfo extends AbstractDynamicInfo {
@@ -578,12 +506,6 @@ public class ConstantPool {
         }
 
         @Override
-        public void write(DataOutput out) throws IOException {
-            out.writeByte(tag());
-            out.writeShort(name_index);
-        }
-
-        @Override
         public String toString() {
             return "ModuleInfo:" + name_index;
         }
@@ -604,12 +526,6 @@ public class ConstantPool {
         @Override
         public int tag() {
             return CONSTANT_Package;
-        }
-
-        @Override
-        public void write(DataOutput out) throws IOException {
-            out.writeByte(tag());
-            out.writeShort(name_index);
         }
 
         @Override
@@ -858,34 +774,4 @@ public class ConstantPool {
                 () -> new InvokeDynamicInfo(bootstrap_method_attr_index, nameAndTypeInfo(name, descriptor)));
     }
 
-    public void write(DataOutput out) throws IOException {
-        int constant_pool_count = size();
-        out.writeShort(constant_pool_count);
-        for (int index = 1; index < constant_pool_count; index++) {
-            Object entry = entry(index);
-            if (entry instanceof Info) {
-                ((Info) entry).write(out);
-            } else if (entry instanceof String) {
-                writeUtf8Info(out, (String) entry);
-            } else if (entry instanceof Integer) {
-                writeIntegerInfo(out, (Integer) entry);
-            } else if (entry instanceof Long) {
-                writeLongInfo(out, (Long) entry);
-                // For some insane optimization reason, the Long(5) and
-                // Double(6) entries take two slots in the constant pool.
-                // See 4.4.5
-                index++;
-            } else if (entry instanceof Float) {
-                writeFloatInfo(out, (Float) entry);
-            } else if (entry instanceof Double) {
-                writeDoubleInfo(out, (Double) entry);
-                // For some insane optimization reason, the Long(5) and
-                // Double(6) entries take two slots in the constant pool.
-                // See 4.4.5
-                index++;
-            } else {
-                throw new IOException("Unrecognized constant pool entry " + entry + " at index " + index);
-            }
-        }
-    }
 }
