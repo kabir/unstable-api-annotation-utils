@@ -71,14 +71,8 @@ public class ExperimentalAnnotationMojo
     private void searchExperimentalAnnotation(Artifact artifact) throws IOException {
         for (Filter indexFilter : indexFilters) {
             if (indexFilter.getGroupIds().contains(artifact.getGroupId())) {
-                searchExperimentalAnnotation(artifact, indexFilter);
+                overallIndex.scanJar(artifact.getFile(), indexFilter.getAnnotation(), indexFilter.getExcludedClasses());
             }
         }
-    }
-
-    private void searchExperimentalAnnotation(Artifact artifact, Filter indexFilter) throws IOException {
-        JarAnnotationIndexer indexer = new JarAnnotationIndexer(artifact.getFile(), indexFilter.getAnnotation(), indexFilter.getExcludedClasses());
-        JarAnnotationIndex jarAnnotationIndex = indexer.scanForAnnotation();
-        overallIndex.mergeAnnotationIndex(jarAnnotationIndex);
     }
 }

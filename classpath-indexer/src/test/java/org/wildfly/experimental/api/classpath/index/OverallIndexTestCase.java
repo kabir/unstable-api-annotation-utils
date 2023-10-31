@@ -9,8 +9,10 @@ import org.wildfly.experimental.api.classpath.index.classes.ClassWithExperimenta
 import org.wildfly.experimental.api.classpath.index.classes.ClassWithExperimentalFields;
 import org.wildfly.experimental.api.classpath.index.classes.ClassWithExperimentalMethods;
 import org.wildfly.experimental.api.classpath.index.classes.Experimental;
+import org.wildfly.experimental.api.classpath.index.classes.Incubating;
 import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperimental;
 import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperimentalMethods;
+import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithIncubating;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,10 +28,11 @@ import static org.wildfly.experimental.api.classpath.index.AnnotatedMethod.Class
 public class OverallIndexTestCase {
 
     private static final String EXPERIMENTAL_ANNOTATION = Experimental.class.getName();
+    private static final String INCUBATING_ANNOTATION = Incubating.class.getName();
 
     @Test
-    public void testOverAllIndex() throws Exception {
-        OverallIndex overallIndex = createOverallIndexWithEverything();
+    public void testOverAllIndexOneAnnotation() throws Exception {
+        OverallIndex overallIndex = createOverallIndexWithEverythingExperimental();
 
         Assert.assertEquals(1, overallIndex.getAnnotations().size());
         Assert.assertTrue(overallIndex.getAnnotations().contains(EXPERIMENTAL_ANNOTATION));
@@ -60,7 +63,7 @@ public class OverallIndexTestCase {
 
     @Test
     public void testOverAllIndexWithEverythingSerialization() throws Exception {
-        OverallIndex index = createOverallIndexWithEverything();
+        OverallIndex index = createOverallIndexWithEverythingExperimental();
         Path path = Paths.get("target/index/index.txt");
         index.save(path);
 
@@ -68,23 +71,47 @@ public class OverallIndexTestCase {
         Assert.assertEquals(index, loaded);
     }
 
-    private OverallIndex createOverallIndexWithEverything() throws IOException {
+    @Test
+    public void testOverallIndexWithTwoAnnotations() throws Exception {
+        OverallIndex overallIndex = createOverallIndexWithEverythingExperimental();
+        addJarIndex(INCUBATING_ANNOTATION, overallIndex, InterfaceWithIncubating.class);
+
+        // Check the new annotation
+        AnnotationIndex index = overallIndex.getAnnotationIndex(INCUBATING_ANNOTATION);
+        checkSet(index.getAnnotatedInterfaces(), InterfaceWithIncubating.class.getName());
+
+
+        // Sanity test that the other index elements are there too (we've tested this better elsewhere)
+        index = overallIndex.getAnnotationIndex(EXPERIMENTAL_ANNOTATION);
+        checkSet(index.getAnnotatedInterfaces(), InterfaceWithExperimental.class.getName());
+
+        Path path = Paths.get("target/index/index2.txt");
+        overallIndex.save(path);
+
+        OverallIndex loaded = OverallIndex.load(path);
+        Assert.assertEquals(overallIndex, loaded);
+    }
+
+    private OverallIndex createOverallIndexWithEverythingExperimental() throws IOException {
         OverallIndex overallIndex = new OverallIndex();
-        overallIndex.mergeAnnotationIndex(createJarIndex(AnnotationWithExperimental.class));
-        overallIndex.mergeAnnotationIndex(createJarIndex(ClassWithExperimental.class));
-        overallIndex.mergeAnnotationIndex(createJarIndex(InterfaceWithExperimental.class));
-        overallIndex.mergeAnnotationIndex(createJarIndex(ClassWithExperimentalMethods.class));
-        overallIndex.mergeAnnotationIndex(createJarIndex(InterfaceWithExperimentalMethods.class));
-        overallIndex.mergeAnnotationIndex(createJarIndex(AnnotationWithExperimentalMethods.class));
-        overallIndex.mergeAnnotationIndex(createJarIndex(ClassWithExperimentalConstructors.class));
-        overallIndex.mergeAnnotationIndex(createJarIndex(ClassWithExperimentalFields.class));
+        addJarIndex(overallIndex, AnnotationWithExperimental.class);
+        addJarIndex(overallIndex, ClassWithExperimental.class);
+        addJarIndex(overallIndex, InterfaceWithExperimental.class);
+        addJarIndex(overallIndex, ClassWithExperimentalMethods.class);
+        addJarIndex(overallIndex, InterfaceWithExperimentalMethods.class);
+        addJarIndex(overallIndex, AnnotationWithExperimentalMethods.class);
+        addJarIndex(overallIndex, ClassWithExperimentalConstructors.class);
+        addJarIndex(overallIndex, ClassWithExperimentalFields.class);
         return overallIndex;
     }
 
-    private AnnotationIndex createJarIndex(Class<?>... classes) throws IOException {
+    private void addJarIndex(OverallIndex index, Class<?>... classes) throws IOException {
+        addJarIndex(EXPERIMENTAL_ANNOTATION, index, classes);
+    }
+
+    private void addJarIndex(String annotation, OverallIndex index, Class<?>... classes) throws IOException {
         File file = TestUtils.createJar(classes);
-        JarAnnotationIndexer indexer = new JarAnnotationIndexer(file, EXPERIMENTAL_ANNOTATION, Collections.emptySet());
-        return indexer.scanForAnnotation();
+        index.scanJar(file, annotation, Collections.emptySet());
     }
 
 

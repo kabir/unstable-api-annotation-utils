@@ -2,6 +2,7 @@ package org.wildfly.experimental.api.classpath.index;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -25,7 +26,13 @@ public class OverallIndex {
         this.indexes = indexes;
     }
 
-    public void mergeAnnotationIndex(AnnotationIndex annotationIndex) {
+    public void scanJar(File jar, String annotation, Set<String> excludedClasses) throws IOException {
+        JarAnnotationIndexer indexer = new JarAnnotationIndexer(jar, annotation, excludedClasses);
+        JarAnnotationIndex jarAnnotationIndex = indexer.scanForAnnotation();
+        mergeAnnotationIndex(jarAnnotationIndex);
+    }
+
+    private void mergeAnnotationIndex(AnnotationIndex annotationIndex) {
         AnnotationIndex index = indexes.get(annotationIndex.getAnnotationName());
         if (index == null) {
             index = new AnnotationIndex(annotationIndex);
