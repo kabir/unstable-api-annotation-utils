@@ -11,7 +11,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-class AnnotationIndex {
+public class AnnotationIndex {
 
     private static final String START_MARKER = "==";
     private static final String END_MARKER = "=/";

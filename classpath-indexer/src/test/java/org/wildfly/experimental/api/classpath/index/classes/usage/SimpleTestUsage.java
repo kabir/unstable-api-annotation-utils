@@ -3,6 +3,8 @@ package org.wildfly.experimental.api.classpath.index.classes.usage;
 import org.wildfly.experimental.api.classpath.index.classes.ClassWithExperimentalMethods;
 import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperimentalMethods;
 
+import java.util.function.Consumer;
+
 public class SimpleTestUsage {
     InterfaceWithExperimentalMethods iface;
     public void test() {

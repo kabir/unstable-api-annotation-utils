@@ -32,6 +32,13 @@ public class OverallIndex {
         mergeAnnotationIndex(jarAnnotationIndex);
     }
 
+
+    private void merge(OverallIndex index) {
+        for (AnnotationIndex ai : index.indexes.values()) {
+            mergeAnnotationIndex(ai);
+        }
+    }
+
     private void mergeAnnotationIndex(AnnotationIndex annotationIndex) {
         AnnotationIndex index = indexes.get(annotationIndex.getAnnotationName());
         if (index == null) {
@@ -63,7 +70,20 @@ public class OverallIndex {
         return indexes.get(annotation);
     }
 
-    public static OverallIndex load(Path path) throws IOException {
+    public static OverallIndex load(Path path, Path... additional) throws IOException {
+        if (!Files.exists(path) || Files.isDirectory(path)) {
+            throw new FileNotFoundException(path.toString());
+        }
+        OverallIndex index = loadIndex(path);
+
+        for (Path additionalPath : additional) {
+            index.merge(loadIndex(additionalPath));
+        }
+
+        return index;
+    }
+
+    private static OverallIndex loadIndex(Path path) throws IOException {
         if (!Files.exists(path) || Files.isDirectory(path)) {
             throw new FileNotFoundException(path.toString());
         }

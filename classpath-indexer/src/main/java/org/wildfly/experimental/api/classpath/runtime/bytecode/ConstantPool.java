@@ -1,11 +1,8 @@
 package org.wildfly.experimental.api.classpath.runtime.bytecode;
 
 import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -34,9 +31,18 @@ class ConstantPool {
     public static final int	CONSTANT_Package			= 20;
 
     final Object[]			pool;
+    private final ClassInfo[] classInfos;
+    private final MethodrefInfo[] methodRefInfos;
+    private final InterfaceMethodrefInfo[] interfaceMethodRefInfos;
+    private final FieldrefInfo[] fieldRefInfos;
+    
+    public ConstantPool(Object[] pool, ClassInfo[] classInfos, MethodrefInfo[] methodRefInfos, InterfaceMethodrefInfo[] interfaceMethodRefInfos, FieldrefInfo[] fieldRefInfos) {
 
-    public ConstantPool(Object[] pool) {
         this.pool = pool;
+        this.classInfos = classInfos;
+        this.methodRefInfos = methodRefInfos;
+        this.interfaceMethodRefInfos = interfaceMethodRefInfos;
+        this.fieldRefInfos = fieldRefInfos;
     }
 
     public int size() {
@@ -99,7 +105,12 @@ class ConstantPool {
     public static ConstantPool read(DataInput in) throws IOException {
         int constant_pool_count = in.readUnsignedShort();
         Object[] pool = new Object[constant_pool_count];
-        List<Integer> classInfoIndexes = new LinkedList<>();
+
+        // Record where these are by the index of the classinfo
+        ClassInfo[] classInfos = new ClassInfo[constant_pool_count];
+        MethodrefInfo[] methodRefInfos = new MethodrefInfo[constant_pool_count];
+        InterfaceMethodrefInfo[] interfaceMethodRefInfos = new InterfaceMethodrefInfo[constant_pool_count];
+        FieldrefInfo[] fieldRefInfos = new FieldrefInfo[constant_pool_count];
 
         for (int index = 1; index < constant_pool_count; index++) {
             int tag = in.readUnsignedByte();
@@ -133,7 +144,9 @@ class ConstantPool {
                     break;
                 }
                 case CONSTANT_Class : {
-                    pool[index] = ClassInfo.read(in);
+                    ClassInfo classInfo = ClassInfo.read(in);
+                    pool[index] = classInfo;
+                    classInfos[index] = classInfo;
                     break;
                 }
                 case CONSTANT_String : {
@@ -141,15 +154,21 @@ class ConstantPool {
                     break;
                 }
                 case CONSTANT_Fieldref : {
-                    pool[index] = FieldrefInfo.read(in);
+                    FieldrefInfo fieldrefInfo = FieldrefInfo.read(in);
+                    pool[index] = fieldrefInfo;
+                    fieldRefInfos[fieldrefInfo.class_index] = fieldrefInfo;
                     break;
                 }
                 case CONSTANT_Methodref : {
-                    pool[index] = MethodrefInfo.read(in);
+                    MethodrefInfo methodrefInfo = MethodrefInfo.read(in);
+                    pool[index] = methodrefInfo;
+                    methodRefInfos[methodrefInfo.class_index] = methodrefInfo;
                     break;
                 }
                 case CONSTANT_InterfaceMethodref : {
-                    pool[index] = InterfaceMethodrefInfo.read(in);
+                    InterfaceMethodrefInfo interfaceMethodrefInfo = InterfaceMethodrefInfo.read(in);
+                    pool[index] = interfaceMethodrefInfo;
+                    interfaceMethodRefInfos[interfaceMethodrefInfo.class_index] = interfaceMethodrefInfo;
                     break;
                 }
                 case CONSTANT_NameAndType : {
@@ -186,7 +205,7 @@ class ConstantPool {
             }
         }
 
-        ConstantPool constant_pool = new ConstantPool(pool);
+        ConstantPool constant_pool = new ConstantPool(pool, classInfos, methodRefInfos, interfaceMethodRefInfos, fieldRefInfos);
         return constant_pool;
     }
 
