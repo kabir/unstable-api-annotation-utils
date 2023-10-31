@@ -1,4 +1,4 @@
-package org.wildfly.experimental.api.classpath.indexer.classes;
+package org.wildfly.experimental.api.classpath.index.classes;
 
 public class ClassWithExperimentalMethods {
     @Experimental

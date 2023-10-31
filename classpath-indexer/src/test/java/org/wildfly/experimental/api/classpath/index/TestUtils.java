@@ -1,4 +1,4 @@
-package org.wildfly.experimental.api.classpath.indexer;
+package org.wildfly.experimental.api.classpath.index;
 
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;

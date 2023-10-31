@@ -11,11 +11,12 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexer;
+import org.wildfly.experimental.api.classpath.index.OverallIndex;
+import org.wildfly.experimental.api.classpath.index.JarAnnotationIndex;
+import org.wildfly.experimental.api.classpath.index.JarAnnotationIndexer;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ public class ExperimentalAnnotationMojo
     @Component
     MavenProject mavenProject;
 
-    Set<String> foundClasses = new HashSet<>();
+    OverallIndex overallIndex;
 
     public void execute() throws MojoExecutionException {
         try {
@@ -61,8 +62,7 @@ public class ExperimentalAnnotationMojo
             }
 
             Path path = Paths.get(outputFile.toURI());
-            Files.createDirectories(path.getParent());
-            Files.write(path, foundClasses);
+            overallIndex.save(path);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -78,6 +78,7 @@ public class ExperimentalAnnotationMojo
 
     private void searchExperimentalAnnotation(Artifact artifact, Filter indexFilter) throws IOException {
         JarAnnotationIndexer indexer = new JarAnnotationIndexer(artifact.getFile(), indexFilter.getAnnotation(), indexFilter.getExcludedClasses());
-        foundClasses.addAll(indexer.scanForAnnotation().getAnnotatedAnnotations());
+        JarAnnotationIndex jarAnnotationIndex = indexer.scanForAnnotation();
+        overallIndex.mergeAnnotationIndex(jarAnnotationIndex);
     }
 }

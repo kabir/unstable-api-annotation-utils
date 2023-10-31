@@ -1,4 +1,4 @@
-package org.wildfly.experimental.api.classpath.indexer;
+package org.wildfly.experimental.api.classpath.index;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
@@ -9,10 +9,7 @@ import org.jboss.jandex.Indexer;
 import org.jboss.jandex.JarIndexer;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Result;
-import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.AnnotatedConstructor;
-import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.AnnotatedField;
-import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.AnnotatedMethod;
-import org.wildfly.experimental.api.classpath.indexer.JarAnnotationIndexerResult.ClassType;
+import org.wildfly.experimental.api.classpath.index.AnnotatedMethod.ClassType;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,14 +32,14 @@ public class JarAnnotationIndexer {
         this.excludedClasses = excludedClasses;
     }
 
-    public JarAnnotationIndexerResult scanForAnnotation() throws IOException {
+    public JarAnnotationIndex scanForAnnotation() throws IOException {
         Set<String> foundClasses = new HashSet<>();
         Indexer indexer = new Indexer();
         Result result = JarIndexer.createJarIndex(file, indexer, false, true, false);
         Index index = result.getIndex();
 
         Collection<AnnotationInstance> annotations = index.getAnnotations(experimentalAnnotation);
-        JarAnnotationIndexerResult.ResultBuilder resultBuilder = JarAnnotationIndexerResult.builder(experimentalAnnotation);
+        JarAnnotationIndex.ResultBuilder resultBuilder = JarAnnotationIndex.builder(experimentalAnnotation);
         for (AnnotationInstance annotation : annotations) {
             if (annotation.target().kind() == AnnotationTarget.Kind.CLASS) {
                 ClassInfo classInfo = annotation.target().asClass();
@@ -67,11 +64,11 @@ public class JarAnnotationIndexer {
                     } else {
                         ClassType classType = null;
                         if (classInfo.isAnnotation()) {
-                            classType = ClassType.ANNOTATION;
+                            classType = AnnotatedMethod.ClassType.ANNOTATION;
                         } else if (classInfo.isInterface()) {
-                            classType = ClassType.INTERFACE;
+                            classType = AnnotatedMethod.ClassType.INTERFACE;
                         } else if (classInfo.isDeclaration()) {
-                            classType = ClassType.CLASS;
+                            classType = AnnotatedMethod.ClassType.CLASS;
                         } else {
                             // TODO warn/error?
                             // Continue for now
