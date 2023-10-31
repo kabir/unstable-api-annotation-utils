@@ -38,6 +38,9 @@ public class ClassBytecodeInspector {
 
         ConstantPool pool = ConstantPool.read(in);
 
+
+
+        // TODO read the superclass and interfaces
 //        int access_flags = in.readUnsignedShort();
 //
 //        int this_class_index = in.readUnsignedShort();

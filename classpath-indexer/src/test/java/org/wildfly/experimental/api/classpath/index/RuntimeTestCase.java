@@ -47,7 +47,7 @@ public class RuntimeTestCase {
 
     @Test
     public void testSimpleTestUsage() throws Exception {
-        ClassBytecodeInspector clazz = createInspector(SimpleTestUsage.class, runtimeIndex);
+        ClassBytecodeInspector bytecodeInspector = createInspector(SimpleTestUsage.class, runtimeIndex);
         System.out.println("hello");
     }
 

@@ -30,19 +30,11 @@ class ConstantPool {
     public static final int	CONSTANT_Module				= 19;
     public static final int	CONSTANT_Package			= 20;
 
-    final Object[]			pool;
-    private final ClassInfo[] classInfos;
-    private final MethodrefInfo[] methodRefInfos;
-    private final InterfaceMethodrefInfo[] interfaceMethodRefInfos;
-    private final FieldrefInfo[] fieldRefInfos;
-    
-    public ConstantPool(Object[] pool, ClassInfo[] classInfos, MethodrefInfo[] methodRefInfos, InterfaceMethodrefInfo[] interfaceMethodRefInfos, FieldrefInfo[] fieldRefInfos) {
+    final Info[]			pool;
+
+    public ConstantPool(Info[] pool) {
 
         this.pool = pool;
-        this.classInfos = classInfos;
-        this.methodRefInfos = methodRefInfos;
-        this.interfaceMethodRefInfos = interfaceMethodRefInfos;
-        this.fieldRefInfos = fieldRefInfos;
     }
 
     public int size() {
@@ -104,13 +96,7 @@ class ConstantPool {
 
     public static ConstantPool read(DataInput in) throws IOException {
         int constant_pool_count = in.readUnsignedShort();
-        Object[] pool = new Object[constant_pool_count];
-
-        // Record where these are by the index of the classinfo
-        ClassInfo[] classInfos = new ClassInfo[constant_pool_count];
-        MethodrefInfo[] methodRefInfos = new MethodrefInfo[constant_pool_count];
-        InterfaceMethodrefInfo[] interfaceMethodRefInfos = new InterfaceMethodrefInfo[constant_pool_count];
-        FieldrefInfo[] fieldRefInfos = new FieldrefInfo[constant_pool_count];
+        Info[] pool = new Info[constant_pool_count];
 
         for (int index = 1; index < constant_pool_count; index++) {
             int tag = in.readUnsignedByte();
@@ -120,15 +106,21 @@ class ConstantPool {
                     break;
                 }
                 case CONSTANT_Integer : {
-                    pool[index] = readIntegerInfo(in);
+                    readIntegerInfo(in);
+                    // We don't care about the integer value here
+                    pool[index] = IgnoredIntegerInfo.INSTANCE;
                     break;
                 }
                 case CONSTANT_Float : {
-                    pool[index] = readFloatInfo(in);
+                    readFloatInfo(in);
+                    // We don't care about the float value here
+                    pool[index] = IgnoredFloatInfo.INSTANCE;
                     break;
                 }
                 case CONSTANT_Long : {
-                    pool[index] = readLongInfo(in);
+                    readLongInfo(in);
+                    // We don't care about the long value here
+                    pool[index] = IgnoredLongInfo.INSTANCE;
                     // For some insane optimization reason, the Long(5) and
                     // Double(6) entries take two slots in the constant pool.
                     // See 4.4.5
@@ -136,7 +128,9 @@ class ConstantPool {
                     break;
                 }
                 case CONSTANT_Double : {
-                    pool[index] = readDoubleInfo(in);
+                    readDoubleInfo(in);
+                    // We don't care about the double value here
+                    pool[index] = IgnoredDoubleInfo.INSTANCE;
                     // For some insane optimization reason, the Long(5) and
                     // Double(6) entries take two slots in the constant pool.
                     // See 4.4.5
@@ -144,9 +138,7 @@ class ConstantPool {
                     break;
                 }
                 case CONSTANT_Class : {
-                    ClassInfo classInfo = ClassInfo.read(in);
-                    pool[index] = classInfo;
-                    classInfos[index] = classInfo;
+                    pool[index] = ClassInfo.read(in);
                     break;
                 }
                 case CONSTANT_String : {
@@ -154,21 +146,15 @@ class ConstantPool {
                     break;
                 }
                 case CONSTANT_Fieldref : {
-                    FieldrefInfo fieldrefInfo = FieldrefInfo.read(in);
-                    pool[index] = fieldrefInfo;
-                    fieldRefInfos[fieldrefInfo.class_index] = fieldrefInfo;
+                    pool[index] = FieldrefInfo.read(in);
                     break;
                 }
                 case CONSTANT_Methodref : {
-                    MethodrefInfo methodrefInfo = MethodrefInfo.read(in);
-                    pool[index] = methodrefInfo;
-                    methodRefInfos[methodrefInfo.class_index] = methodrefInfo;
+                    pool[index] = MethodrefInfo.read(in);
                     break;
                 }
                 case CONSTANT_InterfaceMethodref : {
-                    InterfaceMethodrefInfo interfaceMethodrefInfo = InterfaceMethodrefInfo.read(in);
-                    pool[index] = interfaceMethodrefInfo;
-                    interfaceMethodRefInfos[interfaceMethodrefInfo.class_index] = interfaceMethodrefInfo;
+                    pool[index] = InterfaceMethodrefInfo.read(in);
                     break;
                 }
                 case CONSTANT_NameAndType : {
@@ -205,13 +191,13 @@ class ConstantPool {
             }
         }
 
-        ConstantPool constant_pool = new ConstantPool(pool, classInfos, methodRefInfos, interfaceMethodRefInfos, fieldRefInfos);
+        ConstantPool constant_pool = new ConstantPool(pool);
         return constant_pool;
     }
 
-    static String readUtf8Info(DataInput in) throws IOException {
+    static Utf8info readUtf8Info(DataInput in) throws IOException {
         String constant = in.readUTF();
-        return constant.intern();
+        return new Utf8info(constant.intern());
     }
 
     static Integer readIntegerInfo(DataInput in) throws IOException {
@@ -236,6 +222,65 @@ class ConstantPool {
 
     public interface Info {
         int tag();
+    }
+
+
+    // We don't care about Integer values for this purpose
+    public static class IgnoredIntegerInfo implements Info {
+        static final IgnoredIntegerInfo INSTANCE = new IgnoredIntegerInfo();
+
+        @Override
+        public int tag() {
+            return CONSTANT_Integer;
+        }
+    }
+
+    public static class IgnoredFloatInfo implements Info {
+        static final IgnoredFloatInfo INSTANCE = new IgnoredFloatInfo();
+
+        @Override
+        public int tag() {
+            return CONSTANT_Integer;
+        }
+    }
+    
+    public static class IgnoredDoubleInfo implements Info {
+        static final IgnoredDoubleInfo INSTANCE = new IgnoredDoubleInfo();
+
+        @Override
+        public int tag() {
+            return CONSTANT_Integer;
+        }
+    }
+
+    // We don't care about Douvle values for this purpose
+    public static class IgnoredLongInfo implements Info {
+        static final IgnoredLongInfo INSTANCE = new IgnoredLongInfo();
+
+        @Override
+        public int tag() {
+            return CONSTANT_Double;
+        }
+    }
+
+
+    public static class Utf8info implements Info {
+        public final String value;
+
+        Utf8info(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public int tag() {
+            return CONSTANT_Utf8;
+        }
+
+        @Override
+        public String toString() {
+            return "Utf8Info:" + value;
+        }
+
     }
 
     public static class ClassInfo implements Info {
