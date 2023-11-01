@@ -14,6 +14,14 @@ public class BytecodeInspectionResultCollector {
         errors.add(new ImplementsAnnotatedInterface(annotations, className, iface));
     }
 
+    public void recordFieldUsage(Set<String> annotations, String className, String fieldClass, String fieldName) {
+        errors.add(new AnnotatedFieldReference(annotations, className, fieldClass, fieldName));
+    }
+
+    public void recordMethodUsage(Set<String> annotations, String className, String methodClass, String methodName, String descriptor) {
+        errors.add(new AnnotatedMethodReference(annotations, className, methodClass, methodName, descriptor));
+    }
+
 
     public abstract class AnnotationUsage {
         private final Set<String> annotations;
@@ -37,6 +45,34 @@ public class BytecodeInspectionResultCollector {
     public class ImplementsAnnotatedInterface extends ExtendsAnnotatedClass {
         public ImplementsAnnotatedInterface(Set<String> annotations, String clazz, String superClass) {
             super(annotations, clazz, superClass);
+        }
+    }
+
+    private class AnnotatedFieldReference extends AnnotationUsage {
+        private final String className;
+        private final String fieldClass;
+        private final String fieldName;
+
+        public AnnotatedFieldReference(Set<String> annotations, String className, String fieldClass, String fieldName) {
+            super(annotations);
+            this.className = className;
+            this.fieldClass = fieldClass;
+            this.fieldName = fieldName;
+        }
+    }
+
+    private class AnnotatedMethodReference extends AnnotationUsage {
+        private final String className;
+        private final String methodClass;
+        private final String methodName;
+        private final String descriptor;
+
+        public AnnotatedMethodReference(Set<String> annotations, String className, String methodClass, String methodName, String descriptor) {
+            super(annotations);
+            this.className = className;
+            this.methodClass = methodClass;
+            this.methodName = methodName;
+            this.descriptor = descriptor;
         }
     }
 }

@@ -6,13 +6,13 @@ import java.util.Objects;
 class AnnotatedMethod {
     private final String className;
     private final String methodName;
-    private final String signature;
+    private final String descriptor;
 
 
-    AnnotatedMethod(String className, String methodName, String signature) {
+    AnnotatedMethod(String className, String methodName, String descriptor) {
         this.className = className;
         this.methodName = methodName;
-        this.signature = signature;
+        this.descriptor = descriptor;
     }
 
     @Override
@@ -20,16 +20,16 @@ class AnnotatedMethod {
         if (this == o) return true;
         if (!(o instanceof AnnotatedMethod)) return false;
         AnnotatedMethod that = (AnnotatedMethod) o;
-        return Objects.equals(className, that.className) && Objects.equals(methodName, that.methodName) && Objects.equals(signature, that.signature);
+        return Objects.equals(className, that.className) && Objects.equals(methodName, that.methodName) && Objects.equals(descriptor, that.descriptor);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(className, methodName, signature);
+        return Objects.hash(className, methodName, descriptor);
     }
 
     void save(PrintWriter writer, String separator) {
-        writer.println(className + separator + methodName + separator + signature);
+        writer.println(className + separator + methodName + separator + descriptor);
     }
 
     static AnnotatedMethod parseReadLine(String s, String separator) {
@@ -49,8 +49,8 @@ class AnnotatedMethod {
         return methodName;
     }
 
-    String getSignature() {
-        return signature;
+    String getDescriptor() {
+        return descriptor;
     }
 
 }

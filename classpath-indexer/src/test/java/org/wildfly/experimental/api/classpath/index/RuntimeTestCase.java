@@ -50,7 +50,6 @@ public class RuntimeTestCase {
     public void testSimpleTestUsage() throws Exception {
         BytecodeInspectionResultCollector resultCollector = new BytecodeInspectionResultCollector();
         ClassBytecodeInspector bytecodeInspector = createInspector(runtimeIndex, resultCollector, SimpleTestUsage.class);
-        System.out.println("hello");
     }
 
     private ClassBytecodeInspector createInspector(RuntimeIndex runtimeIndex, BytecodeInspectionResultCollector resultCollector, Class<?> clazz) throws IOException {
