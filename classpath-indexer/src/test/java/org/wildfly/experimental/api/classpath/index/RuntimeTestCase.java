@@ -1,5 +1,6 @@
 package org.wildfly.experimental.api.classpath.index;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.wildfly.experimental.api.classpath.index.classes.AnnotationWithExperimental;
@@ -11,8 +12,7 @@ import org.wildfly.experimental.api.classpath.index.classes.ClassWithExperimenta
 import org.wildfly.experimental.api.classpath.index.classes.Experimental;
 import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperimental;
 import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperimentalMethods;
-import org.wildfly.experimental.api.classpath.index.classes.usage.SimpleTestUsage;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.BytecodeInspectionResultCollector;
+import org.wildfly.experimental.api.classpath.index.classes.usage.NoUsage;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector;
 
 import java.io.File;
@@ -48,17 +48,19 @@ public class RuntimeTestCase {
 
     @Test
     public void testSimpleTestUsage() throws Exception {
-        BytecodeInspectionResultCollector resultCollector = new BytecodeInspectionResultCollector();
-        ClassBytecodeInspector bytecodeInspector = createInspector(runtimeIndex, resultCollector, SimpleTestUsage.class);
+        ClassBytecodeInspector inspector = new ClassBytecodeInspector(runtimeIndex);
+        boolean ok = scanClass(inspector, NoUsage.class);
+        Assert.assertTrue(ok);
+        Assert.assertEquals(0, inspector.getUsages().size());
     }
 
-    private ClassBytecodeInspector createInspector(RuntimeIndex runtimeIndex, BytecodeInspectionResultCollector resultCollector, Class<?> clazz) throws IOException {
+
+
+    private boolean scanClass(ClassBytecodeInspector inspector, Class<?> clazz) throws IOException {
         String classLocation = clazz.getName().replaceAll("\\.", "/") + ".class";
         URL url = RuntimeTestCase.class.getClassLoader().getResource(classLocation);
         try (InputStream in = url.openStream()) {
-            ClassBytecodeInspector inspector = ClassBytecodeInspector.parseClassFile(clazz.getName(), in, runtimeIndex, resultCollector);
-            return inspector;
+            return inspector.scanClassFile(clazz.getName(), in);
         }
-
     }
 }
