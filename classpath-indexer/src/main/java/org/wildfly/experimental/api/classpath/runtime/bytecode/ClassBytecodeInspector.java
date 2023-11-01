@@ -11,8 +11,8 @@ import java.io.InputStream;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.CLASS_EXTENDS;
-import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.CLASS_IMPLEMENTS;
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.EXTENDS_CLASS;
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.IMPLEMENTS_INTERFACE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.FIELD_REFERENCE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.METHOD_REFERENCE;
 
@@ -147,15 +147,40 @@ public class ClassBytecodeInspector {
         public AnnotationUsage(Set<String> annotations, AnnotationUsageType type, String sourceClass) {
             this.annotations = annotations;
             this.type = type;
-            this.sourceClass = sourceClass;
+            this.sourceClass = RuntimeIndex.convertClassNameToVmFormat(sourceClass);
         }
 
-        AnnotationUsageType getType() {
+        public AnnotationUsageType getType() {
             return type;
         }
 
-        public <T extends AnnotationUsage> T as(Class<T> clazz) {
-            return clazz.cast(this);
+        public Set<String> getAnnotations() {
+            return annotations;
+        }
+
+        public String getSourceClass() {
+            return sourceClass;
+        }
+
+        public ExtendsAnnotatedClass asExtendsAnnotatedClass(AnnotationUsage usage) {
+            if (type != EXTENDS_CLASS) {
+                throw new IllegalStateException();
+            }
+            return (ExtendsAnnotatedClass) this;
+        }
+
+        public AnnotatedMethodReference asAnnotatedMethodReference(AnnotationUsage usage) {
+            if (type != METHOD_REFERENCE) {
+                throw new IllegalStateException();
+            }
+            return (AnnotatedMethodReference) this;
+        }
+
+        public AnnotatedFieldReference asAnnotatedFieldReference(AnnotationUsage usage) {
+            if (type != FIELD_REFERENCE) {
+                throw new IllegalStateException();
+            }
+            return (AnnotatedFieldReference) this;
         }
     }
 
@@ -163,17 +188,24 @@ public class ClassBytecodeInspector {
         private final String superClass;
 
         protected ExtendsAnnotatedClass(Set<String> annotations, String clazz, String superClass) {
-            super(annotations, CLASS_EXTENDS, clazz);
+            super(annotations, EXTENDS_CLASS, clazz);
             this.superClass = superClass;
+        }
+
+        public String getSuperClass() {
+            return superClass;
         }
     }
 
     public static class ImplementsAnnotatedInterface extends AnnotationUsage {
         private final String iface;
         public ImplementsAnnotatedInterface(Set<String> annotations, String clazz, String iface) {
-            super(annotations, CLASS_IMPLEMENTS, clazz);
+            super(annotations, IMPLEMENTS_INTERFACE, clazz);
             this.iface = iface;
+        }
 
+        public String getIface() {
+            return iface;
         }
     }
 
@@ -185,6 +217,14 @@ public class ClassBytecodeInspector {
             super(annotations, FIELD_REFERENCE, className);
             this.fieldClass = fieldClass;
             this.fieldName = fieldName;
+        }
+
+        public String getFieldClass() {
+            return fieldClass;
+        }
+
+        public String getFieldName() {
+            return fieldName;
         }
     }
 
@@ -199,23 +239,25 @@ public class ClassBytecodeInspector {
             this.methodName = methodName;
             this.descriptor = descriptor;
         }
+
+        public String getMethodClass() {
+            return methodClass;
+        }
+
+        public String getMethodName() {
+            return methodName;
+        }
+
+        public String getDescriptor() {
+            return descriptor;
+        }
     }
 
     public enum AnnotationUsageType {
-        CLASS_EXTENDS(ExtendsAnnotatedClass.class),
-        CLASS_IMPLEMENTS(ImplementsAnnotatedInterface.class),
-        METHOD_REFERENCE(AnnotatedMethodReference.class),
-        FIELD_REFERENCE(AnnotatedFieldReference.class);
+        EXTENDS_CLASS,
+        IMPLEMENTS_INTERFACE,
+        METHOD_REFERENCE,
+        FIELD_REFERENCE;
 
-        private final Class<? extends AnnotationUsage> type;
-
-        AnnotationUsageType(Class<? extends AnnotationUsage> type) {
-            this.type = type;
-
-        }
-        
-        public Class<? extends AnnotationUsage> getType() {
-            return type;
-        }
     }
 }

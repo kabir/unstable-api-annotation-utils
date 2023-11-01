@@ -129,7 +129,7 @@ public class RuntimeIndex {
         return set;
     }
 
-    private static String convertClassNameToVmFormat(String s) {
+    public static String convertClassNameToVmFormat(String s) {
         return s.replaceAll("\\.", "/");
     }
 
