@@ -10,8 +10,14 @@ import java.util.function.Supplier;
 
 public class RuntimeIndex {
 
-    //Classes, and their annotations
-    private final Map<String, Set<String>> classesWithAnnotations;
+    // Classes, interfaces and annotations, and their annotations
+    // We are including annotations here since users might decide to implement an annotation interface
+    // that is marked as experimental
+    private final Map<String, Set<String>> allClassesWithAnnotations;
+
+    // Annotations with annotations. Although these are also part of allClassesWithAnnotations,
+    // this field will be needed as input to the Jandex scanning for annotation usage
+    private final Map<String, Set<String>> annotationsWithAnnotations;
 
     // Keys in 'nested order' are className, methodname, method signature. The set is the annotations for the method.
     private final Map<String, Map<String, Map<String, Set<String>>>> methodsWithAnnotations;
@@ -21,36 +27,39 @@ public class RuntimeIndex {
 
 
 
-    private RuntimeIndex(Map<String, Set<String>> classesWithAnnotations,
+    private RuntimeIndex(Map<String, Set<String>> allClassesWithAnnotations,
+                         Map<String, Set<String>> annotationsWithAnnotations,
                          Map<String, Map<String, Map<String, Set<String>>>> methodsWithAnnotations,
                          Map<String, Map<String, Set<String>>> fieldsWithAnnotations) {
-        this.classesWithAnnotations = classesWithAnnotations;
+        this.allClassesWithAnnotations = allClassesWithAnnotations;
+        this.annotationsWithAnnotations = annotationsWithAnnotations;
         this.methodsWithAnnotations = methodsWithAnnotations;
         this.fieldsWithAnnotations = fieldsWithAnnotations;
     }
 
     public static RuntimeIndex load(Path indexFile, Path... additional) throws IOException {
         OverallIndex overallIndex = OverallIndex.load(indexFile, additional);
-        Map<String, Set<String>> classesWithAnnotations = new HashMap<>();
+        Map<String, Set<String>> allClassesWithAnnotations = new HashMap<>();
+        Map<String, Set<String>> annotationsWithAnnotations = new HashMap<>();
         Map<String, Map<String, Map<String, Set<String>>>> methodsWithAnnotations = new HashMap<>();
         Map<String, Map<String, Set<String>>> fieldsWithAnnotations = new HashMap<>();
 
         for (String annotation : overallIndex.getAnnotations()) {
             AnnotationIndex annotationIndex = overallIndex.getAnnotationIndex(annotation);
-            addClassesWithAnnotations(annotation, annotationIndex, classesWithAnnotations);
+            addClassesWithAnnotations(annotation, annotationIndex, allClassesWithAnnotations, annotationsWithAnnotations);
             addMethodsWithAnnotations(annotation, annotationIndex, methodsWithAnnotations);
             addFieldsWithAnnotations(annotation, annotationIndex, fieldsWithAnnotations);
         }
 
-        return new RuntimeIndex(classesWithAnnotations, methodsWithAnnotations, fieldsWithAnnotations);
+        return new RuntimeIndex(allClassesWithAnnotations, annotationsWithAnnotations, methodsWithAnnotations, fieldsWithAnnotations);
     }
 
     private static void addClassesWithAnnotations(
             String annotation,
             AnnotationIndex annotationIndex,
-            Map<String, Set<String>> classesWithAnnotations) {
+            Map<String, Set<String>> classesWithAnnotations,
+            Map<String, Set<String>> annotationsWithAnnotations) {
 
-        // TODO merge these two into simply annotatedClasses?
         for (String clazz : annotationIndex.getAnnotatedClasses()) {
             String vmClass = convertClassNameToVmFormat(clazz);
             Set<String> annotations = getOrCreate(classesWithAnnotations, vmClass, () -> new HashSet<>());
@@ -61,8 +70,13 @@ public class RuntimeIndex {
             Set<String> annotations = getOrCreate(classesWithAnnotations, vmClass, () -> new HashSet<>());
             annotations.add(annotation);
         }
-        // TODO I don't think we need to handle AnnotationIndex.getAnnotatedAnnotations() here since we will use jandex
-        // to pick those out
+        for (String clazz : annotationIndex.getAnnotatedAnnotations()) {
+            String vmClass = convertClassNameToVmFormat(clazz);
+            Set<String> classAnnotations = getOrCreate(classesWithAnnotations, vmClass, () -> new HashSet<>());
+            classAnnotations.add(annotation);
+            Set<String> annAnnotations = getOrCreate(annotationsWithAnnotations, vmClass, () -> new HashSet<>());
+            annAnnotations.add(annotation);
+        }
     }
 
     private static void addMethodsWithAnnotations(String annotation, AnnotationIndex annotationIndex, Map<String, Map<String, Map<String, Set<String>>>> methodsWithAnnotations) {
@@ -103,7 +117,11 @@ public class RuntimeIndex {
         return s.replaceAll("\\.", "/");
     }
 
-    public Set<String> geClassAnnotations(String superClass) {
-        return classesWithAnnotations.get(superClass);
+    public Set<String> getAllClassesWithAnnotations(String clazz) {
+        return allClassesWithAnnotations.get(clazz);
+    }
+
+    public Set<String> getAnnotationsWithAnnotations(String clazz) {
+        return annotationsWithAnnotations.get(clazz);
     }
 }

@@ -55,7 +55,7 @@ public class ClassBytecodeInspector {
         int super_class_index = in.readUnsignedShort();
         if (super_class_index != 0) {
             String superClass = constantPool.className(super_class_index);
-            Set<String> annotations = runtimeIndex.geClassAnnotations(superClass);
+            Set<String> annotations = runtimeIndex.getAllClassesWithAnnotations(superClass);
             if (annotations != null) {
                 resultCollector.recordSuperClassUsage(annotations, className, superClass);
             }
@@ -66,7 +66,7 @@ public class ClassBytecodeInspector {
         for (int i = 0; i < interfacesCount; i++) {
             int interfaceIndex = in.readUnsignedShort();
             String iface = constantPool.className(interfaceIndex);
-            Set<String> annotations = runtimeIndex.geClassAnnotations(iface);
+            Set<String> annotations = runtimeIndex.getAllClassesWithAnnotations(iface);
             if (annotations != null) {
                 resultCollector.recordImplementsInterfaceUsage(annotations, className, iface);
             }
