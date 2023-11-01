@@ -2,10 +2,10 @@ package org.wildfly.experimental.api.classpath.index.classes;
 
 public class ClassWithExperimentalFields {
     @Experimental
-    String fieldA;
+    public String fieldA;
     
     @Experimental
-    static String fieldB;
+    public static String fieldB;
 
     String notAnnotated;
 }

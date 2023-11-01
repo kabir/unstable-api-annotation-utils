@@ -18,6 +18,8 @@ import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytec
 
 public class ClassBytecodeInspector {
 
+    public static final String BYTECODE_CONSTRUCTOR_NAME = RuntimeIndex.BYTECODE_CONSTRUCTOR_NAME;
+
     private final RuntimeIndex runtimeIndex;
 
     private final Set<AnnotationUsage> usages = new LinkedHashSet<>();
@@ -84,6 +86,7 @@ public class ClassBytecodeInspector {
                             noAnnotationUsage = false;
                         }
                     }
+
                     break;
                 }
                 // TODO might need to look into MethodHandle etc.
@@ -204,7 +207,7 @@ public class ClassBytecodeInspector {
             this.iface = iface;
         }
 
-        public String getIface() {
+        public String getInterface() {
             return iface;
         }
     }

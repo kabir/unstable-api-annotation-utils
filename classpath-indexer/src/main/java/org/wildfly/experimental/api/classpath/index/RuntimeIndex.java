@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 
 public class RuntimeIndex {
 
-    private static final String BYTECODE_CONSTRUCTOR_NAME = "\"<init>\"";
+    public static final String BYTECODE_CONSTRUCTOR_NAME = "<init>";
 
     // Classes, interfaces and annotations, and their annotations
     // We are including annotations here since users might decide to implement an annotation interface
@@ -50,6 +50,9 @@ public class RuntimeIndex {
             AnnotationIndex annotationIndex = overallIndex.getAnnotationIndex(annotation);
             addClassesWithAnnotations(annotation, annotationIndex, allClassesWithAnnotations, annotationsWithAnnotations);
             addMethodsWithAnnotations(annotation, annotationIndex, methodsWithAnnotations);
+            // On byte code level the only difference between a constructor and method is the name of the constructor
+            // so we add the constructor to the methodsWithAnnotations set
+            addConstructorsWithAnnotations(annotation, annotationIndex, methodsWithAnnotations);
             addFieldsWithAnnotations(annotation, annotationIndex, fieldsWithAnnotations);
         }
 
