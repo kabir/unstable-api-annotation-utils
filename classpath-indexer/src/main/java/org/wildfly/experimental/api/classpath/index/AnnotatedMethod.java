@@ -44,6 +44,17 @@ class AnnotatedMethod {
         return new AnnotatedMethod(arr[0], ClassType.valueOf(arr[1]), arr[2], arr[3]);
     }
 
+    String getClassName() {
+        return className;
+    }
+
+    String getMethodName() {
+        return methodName;
+    }
+
+    String getSignature() {
+        return signature;
+    }
 
     enum ClassType {
         CLASS,

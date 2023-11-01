@@ -21,6 +21,14 @@ class AnnotatedField {
         return new AnnotatedField(arr[0], arr[1]);
     }
 
+    String getClassName() {
+        return className;
+    }
+
+    String getFieldName() {
+        return fieldName;
+    }
+
     void save(PrintWriter writer, String separator) {
         writer.println(className + separator + fieldName);
     }

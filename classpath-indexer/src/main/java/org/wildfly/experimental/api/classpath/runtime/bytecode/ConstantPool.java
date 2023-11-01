@@ -66,7 +66,7 @@ class ConstantPool {
     }
 
     public String utf8(int utf8_index) {
-        return entry(utf8_index);
+        return ((Utf8info)entry(utf8_index)).value;
     }
 
     public String className(int class_info_index) {

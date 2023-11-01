@@ -12,6 +12,7 @@ import org.wildfly.experimental.api.classpath.index.classes.Experimental;
 import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperimental;
 import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperimentalMethods;
 import org.wildfly.experimental.api.classpath.index.classes.usage.SimpleTestUsage;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.BytecodeInspectionResultCollector;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector;
 
 import java.io.File;
@@ -47,15 +48,16 @@ public class RuntimeTestCase {
 
     @Test
     public void testSimpleTestUsage() throws Exception {
-        ClassBytecodeInspector bytecodeInspector = createInspector(SimpleTestUsage.class, runtimeIndex);
+        BytecodeInspectionResultCollector resultCollector = new BytecodeInspectionResultCollector();
+        ClassBytecodeInspector bytecodeInspector = createInspector(runtimeIndex, resultCollector, SimpleTestUsage.class);
         System.out.println("hello");
     }
 
-    private ClassBytecodeInspector createInspector(Class<?> clazz, RuntimeIndex runtimeIndex) throws IOException {
+    private ClassBytecodeInspector createInspector(RuntimeIndex runtimeIndex, BytecodeInspectionResultCollector resultCollector, Class<?> clazz) throws IOException {
         String classLocation = clazz.getName().replaceAll("\\.", "/") + ".class";
         URL url = RuntimeTestCase.class.getClassLoader().getResource(classLocation);
         try (InputStream in = url.openStream()) {
-            ClassBytecodeInspector inspector = ClassBytecodeInspector.parseClassFile(in, runtimeIndex);
+            ClassBytecodeInspector inspector = ClassBytecodeInspector.parseClassFile(clazz.getName(), in, runtimeIndex, resultCollector);
             return inspector;
         }
 

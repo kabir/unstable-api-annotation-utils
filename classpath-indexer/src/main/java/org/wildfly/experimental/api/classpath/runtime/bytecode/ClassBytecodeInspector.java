@@ -6,6 +6,7 @@ import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
 
 public class ClassBytecodeInspector {
 
@@ -24,7 +25,7 @@ public class ClassBytecodeInspector {
      * @return a ClassBytecodeInspector instance for the class
      * @throws IOException
      */
-    public static ClassBytecodeInspector parseClassFile(InputStream classInputStream, RuntimeIndex runtimeIndex) throws IOException {
+    public static ClassBytecodeInspector parseClassFile(String className, InputStream classInputStream, RuntimeIndex runtimeIndex, BytecodeInspectionResultCollector resultCollector) throws IOException {
         DataInputStream in = new DataInputStream(new BufferedInputStream(classInputStream));
 
         // Parse the stuff before the ConstantPool
@@ -32,33 +33,47 @@ public class ClassBytecodeInspector {
         if (magic != 0xCAFEBABE) {
             throw new IOException("Not a valid class file (no CAFEBABE header)");
         }
-        int minor_version = in.readUnsignedShort();
-        int major_version = in.readUnsignedShort();
+        //Minor Version, we don't need this
+        in.readUnsignedShort();
+        // Major version, we don't need this
+        in.readUnsignedShort();
 
 
-        ConstantPool pool = ConstantPool.read(in);
-
-
-
-        // TODO read the superclass and interfaces
-//        int access_flags = in.readUnsignedShort();
-//
-//        int this_class_index = in.readUnsignedShort();
-//        String this_class = constant_pool.className(this_class_index);
-//
-//        int super_class_index = in.readUnsignedShort();
-//        String super_class = (super_class_index != 0) ? constant_pool.className(super_class_index) : null;
-//
-//        int interfaces_count = in.readUnsignedShort();
-//        String[] interfaces = new String[interfaces_count];
-//        for (int i = 0; i < interfaces_count; i++) {
-//            int interface_index = in.readUnsignedShort();
-//            interfaces[i] = constant_pool.className(interface_index);
-//        }
+        ConstantPool constantPool = ConstantPool.read(in);
 
 
 
-        return new ClassBytecodeInspector(pool);
+        //////////////////////////////////////////
+        // Read and check the superclass and interfaces
+
+        // Access flags, we don't need this
+        int access_flags = in.readUnsignedShort();
+
+        // This class index, we don't need this
+        in.readUnsignedShort();
+
+        int super_class_index = in.readUnsignedShort();
+        if (super_class_index != 0) {
+            String superClass = constantPool.className(super_class_index);
+            Set<String> annotations = runtimeIndex.geClassAnnotations(superClass);
+            if (annotations != null) {
+                resultCollector.recordSuperClassUsage(annotations, className, superClass);
+            }
+        }
+
+
+        int interfacesCount = in.readUnsignedShort();
+        for (int i = 0; i < interfacesCount; i++) {
+            int interfaceIndex = in.readUnsignedShort();
+            String iface = constantPool.className(interfaceIndex);
+            Set<String> annotations = runtimeIndex.geClassAnnotations(iface);
+            if (annotations != null) {
+                resultCollector.recordImplementsInterfaceUsage(annotations, className, iface);
+            }
+        }
+
+        return new ClassBytecodeInspector(constantPool);
     }
+
 
 }
