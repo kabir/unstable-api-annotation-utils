@@ -21,10 +21,6 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Set;
 
-import static org.wildfly.experimental.api.classpath.index.AnnotatedMethod.ClassType.ANNOTATION;
-import static org.wildfly.experimental.api.classpath.index.AnnotatedMethod.ClassType.CLASS;
-import static org.wildfly.experimental.api.classpath.index.AnnotatedMethod.ClassType.INTERFACE;
-
 public class OverallIndexTestCase {
 
     private static final String EXPERIMENTAL_ANNOTATION = Experimental.class.getName();
@@ -44,11 +40,11 @@ public class OverallIndexTestCase {
 
         Set<AnnotatedMethod> methodsSet = index.getAnnotatedMethods();
         Assert.assertEquals(5, methodsSet.size());
-        Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(AnnotationWithExperimentalMethods.class.getName(), ANNOTATION, "value", "()Ljava/lang/String;")));
-        Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), CLASS, "test", "(Ljava/lang/String;)V")));
-        Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), CLASS, "test", "()V")));
-        Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), INTERFACE, "test", "(Ljava/lang/String;)V")));
-        Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), INTERFACE, "test", "()V")));
+        Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(AnnotationWithExperimentalMethods.class.getName(), "value", "()Ljava/lang/String;")));
+        Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), "test", "(Ljava/lang/String;)V")));
+        Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), "test", "()V")));
+        Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), "test", "(Ljava/lang/String;)V")));
+        Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), "test", "()V")));
 
         Set<AnnotatedConstructor> constructorSet = index.getAnnotatedConstructors();
         Assert.assertEquals(2, constructorSet.size());

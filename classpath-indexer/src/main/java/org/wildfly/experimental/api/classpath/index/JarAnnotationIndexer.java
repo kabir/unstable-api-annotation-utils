@@ -9,7 +9,6 @@ import org.jboss.jandex.Indexer;
 import org.jboss.jandex.JarIndexer;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Result;
-import org.wildfly.experimental.api.classpath.index.AnnotatedMethod.ClassType;
 
 import java.io.File;
 import java.io.IOException;
@@ -62,21 +61,8 @@ public class JarAnnotationIndexer {
                         AnnotatedConstructor annotatedConstructor = new AnnotatedConstructor(className, methodInfo.descriptor());
                         resultBuilder.addAnnotatedConstructor(annotatedConstructor);
                     } else {
-                        ClassType classType = null;
-                        if (classInfo.isAnnotation()) {
-                            classType = AnnotatedMethod.ClassType.ANNOTATION;
-                        } else if (classInfo.isInterface()) {
-                            classType = AnnotatedMethod.ClassType.INTERFACE;
-                        } else if (classInfo.isDeclaration()) {
-                            classType = AnnotatedMethod.ClassType.CLASS;
-                        } else {
-                            // TODO warn/error?
-                            // Continue for now
-                            continue;
-                        }
                         AnnotatedMethod annotatedMethod = new AnnotatedMethod(
                                 className,
-                                classType,
                                 methodInfo.name(),
                                 methodInfo.descriptor());
 

@@ -16,10 +16,6 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Set;
 
-import static org.wildfly.experimental.api.classpath.index.AnnotatedMethod.ClassType.ANNOTATION;
-import static org.wildfly.experimental.api.classpath.index.AnnotatedMethod.ClassType.CLASS;
-import static org.wildfly.experimental.api.classpath.index.AnnotatedMethod.ClassType.INTERFACE;
-
 public class JarAnnotationIndexerTestCase {
 
     // These feel a bit like corner cases, especially for our first iteration
@@ -51,11 +47,11 @@ public class JarAnnotationIndexerTestCase {
         Set<AnnotatedMethod> set = result.getAnnotatedMethods();
         Assert.assertEquals(5, set.size());
 
-        Assert.assertTrue(set.contains(new AnnotatedMethod(AnnotationWithExperimentalMethods.class.getName(), ANNOTATION, "value", "()Ljava/lang/String;")));
-        Assert.assertTrue(set.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), CLASS, "test", "(Ljava/lang/String;)V")));
-        Assert.assertTrue(set.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), CLASS, "test", "()V")));
-        Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), INTERFACE, "test", "(Ljava/lang/String;)V")));
-        Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), INTERFACE, "test", "()V")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(AnnotationWithExperimentalMethods.class.getName(), "value", "()Ljava/lang/String;")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), "test", "(Ljava/lang/String;)V")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), "test", "()V")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), "test", "(Ljava/lang/String;)V")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), "test", "()V")));
     }
     @Test
     public void testScanConstructorAnnotations() throws Exception {
