@@ -56,24 +56,28 @@
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-plugin-api</artifactId>
                 <version>${version.org.apache.maven.core}</version>
+                <scope>provided</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-artifact</artifactId>
                 <version>${version.org.apache.maven.core}</version>
+                <scope>provided</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-core</artifactId>
                 <version>${version.org.apache.maven.core}</version>
+                <scope>provided</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-model-builder</artifactId>
                 <version>${version.org.apache.maven.core}</version>
+                <scope>provided</scope>
             </dependency>
 
             <dependency>
@@ -88,16 +92,19 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${version.junit}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.shrinkwrap</groupId>
                 <artifactId>shrinkwrap-api</artifactId>
                 <version>${version.org.jboss.shrinkwrap.shrinkwrap}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.shrinkwrap</groupId>
                 <artifactId>shrinkwrap-impl-base</artifactId>
                 <version>${version.org.jboss.shrinkwrap.shrinkwrap}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

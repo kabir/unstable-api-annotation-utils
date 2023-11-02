@@ -12,8 +12,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.wildfly.experimental.api.classpath.index.OverallIndex;
-import org.wildfly.experimental.api.classpath.index.JarAnnotationIndex;
-import org.wildfly.experimental.api.classpath.index.JarAnnotationIndexer;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,20 +21,21 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
-@Mojo(name="index-experimental-annotations", defaultPhase = LifecyclePhase.COMPILE, requiresDependencyResolution = ResolutionScope.COMPILE)
+@Mojo(name="index-experimental-annotations", defaultPhase = LifecyclePhase.COMPILE, requiresDependencyResolution = ResolutionScope.COMPILE, requiresProject = true)
 public class ExperimentalAnnotationMojo
         extends AbstractMojo
 {
 
     @Parameter(property = "filters", required = true)
-    List<Filter> indexFilters = new ArrayList<>();
+    private List<Filter> filters = new ArrayList<>();
 
     @Parameter(property = "outputFile", required = true)
-    File outputFile;
+    private File outputFile;
 
     @Component
-    MavenProject mavenProject;
+    private MavenProject mavenProject;
 
     OverallIndex overallIndex;
 
@@ -44,22 +43,39 @@ public class ExperimentalAnnotationMojo
         try {
             Log log = getLog();
             log.info("Running plugin");
+            overallIndex = new OverallIndex();
 
-            log.info(indexFilters.toString());
+            log.info(filters.toString());
 
             List<Dependency> dependencies = mavenProject.getDependencies();
 
-            Set<String> allGroupIds = new HashSet<>();
-            for (Filter indexFilter : indexFilters) {
-                allGroupIds.addAll(indexFilter.getGroupIds());
-            }
+            for (Filter indexFilter : filters) {
+                Set<String> allGroupIds = new HashSet<>();
+                Set<Pattern> wildcardGroupIds = new HashSet<>();
+                for (String id : indexFilter.getGroupIds()) {
+                    if (id.contains("*")) {
+                        wildcardGroupIds.add(createPattern(id));
+                    } else {
+                        allGroupIds.add(id);
+                    }
+                }
 
-            for (Artifact artifact : mavenProject.getArtifacts()) {
-                // log.info(artifact.getGroupId() + ":" + artifact.getArtifactId());
-                if (artifact.getType().equals("jar") && allGroupIds.contains(artifact.getGroupId())) {
-                    searchExperimentalAnnotation(artifact);
+                for (Artifact artifact : mavenProject.getArtifacts()) {
+                    log.info(artifact.getGroupId() + ":" + artifact.getArtifactId());
+                    if (artifact.getType().equals("jar")) {
+                        if (allGroupIds.contains(artifact.getGroupId())) {
+                            overallIndex.scanJar(artifact.getFile(), indexFilter.getAnnotation(), indexFilter.getExcludedClasses());
+                        } else {
+                            for (Pattern pattern : wildcardGroupIds) {
+                                if (pattern.matcher(artifact.getGroupId()).matches()) {
+                                    overallIndex.scanJar(artifact.getFile(), indexFilter.getAnnotation(), indexFilter.getExcludedClasses());
+                                }
+                            }
+                        }
+                    }
                 }
             }
+
 
             Path path = Paths.get(outputFile.toURI());
             overallIndex.save(path);
@@ -68,11 +84,18 @@ public class ExperimentalAnnotationMojo
         }
     }
 
-    private void searchExperimentalAnnotation(Artifact artifact) throws IOException {
-        for (Filter indexFilter : indexFilters) {
-            if (indexFilter.getGroupIds().contains(artifact.getGroupId())) {
-                overallIndex.scanJar(artifact.getFile(), indexFilter.getAnnotation(), indexFilter.getExcludedClasses());
+    private static Pattern createPattern(String s) {
+        StringBuilder builder = new StringBuilder();
+        for (char c : s.toCharArray()) {
+            if (c == '.') {
+                builder.append('\\');
+            } else {
+                if (c == '*') {
+                    builder.append('.');
+                }
             }
+            builder.append(c);
         }
+        return Pattern.compile(builder.toString());
     }
 }
