@@ -23,6 +23,7 @@ import org.wildfly.experimental.api.classpath.index.classes.usage.ClassUsageAsFi
 import org.wildfly.experimental.api.classpath.index.classes.usage.ClassUsageAsMethodParameter;
 import org.wildfly.experimental.api.classpath.index.classes.usage.ClassUsageAsMethodReturnType;
 import org.wildfly.experimental.api.classpath.index.classes.usage.ClassUsageInMethodBody;
+import org.wildfly.experimental.api.classpath.index.classes.usage.ClassUsageSetter;
 import org.wildfly.experimental.api.classpath.index.classes.usage.ConstructorReference;
 import org.wildfly.experimental.api.classpath.index.classes.usage.FieldReference;
 import org.wildfly.experimental.api.classpath.index.classes.usage.MethodReference;
@@ -237,6 +238,16 @@ public class RuntimeTestCase {
     }
 
     @Test
+    @Ignore("Just referencing a class in a declaration doesn't seem to add it unless it is actually used, as in testClassUsageAsMethodBody()")
+    public void testClassUsageSetter() throws Exception {
+        AnnotatedClassUsage usage =
+                scanAndGetSingleAnnotationUsage(ClassUsageSetter.class, CLASS_USAGE)
+                        .asAnnotatedClassUsage();
+        Assert.assertEquals(convertClassNameToVmFormat(ClassUsageSetter.class), usage.getSourceClass());
+        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimental.class), usage.getReferencedClass());
+    }
+
+    @Test
     public void testClassUsageAsMethodBody() throws Exception {
         AnnotatedClassUsage usage =
                 scanAndGetSingleAnnotationUsage(ClassUsageInMethodBody.class, CLASS_USAGE)
@@ -253,7 +264,6 @@ public class RuntimeTestCase {
         Assert.assertEquals(convertClassNameToVmFormat(ClassArrayUsageInMethodBody.class), usage.getSourceClass());
         Assert.assertEquals(convertClassNameToVmFormat(InterfaceWithExperimental.class), usage.getReferencedClass());
     }
-
 
     AnnotationUsage scanAndGetSingleAnnotationUsage(
             Class<?> clazz,
