@@ -13,6 +13,10 @@ import org.wildfly.experimental.api.classpath.index.classes.ClassWithExperimenta
 import org.wildfly.experimental.api.classpath.index.classes.Experimental;
 import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperimental;
 import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperimentalMethods;
+import org.wildfly.experimental.api.classpath.index.classes.usage.ClassArrayUsageAsField;
+import org.wildfly.experimental.api.classpath.index.classes.usage.ClassArrayUsageAsMethodParameter;
+import org.wildfly.experimental.api.classpath.index.classes.usage.ClassArrayUsageAsMethodReturnType;
+import org.wildfly.experimental.api.classpath.index.classes.usage.ClassArrayUsageInMethodBody;
 import org.wildfly.experimental.api.classpath.index.classes.usage.ClassExtendsUsage;
 import org.wildfly.experimental.api.classpath.index.classes.usage.ClassImplementsUsage;
 import org.wildfly.experimental.api.classpath.index.classes.usage.ClassUsageAsField;
@@ -184,12 +188,32 @@ public class RuntimeTestCase {
 
     @Test
     @Ignore("Just referencing a class in a declaration doesn't seem to add it unless it is actually used, as in testClassUsageAsMethodBody()")
+    public void testClassArrayUsageAsField() throws Exception {
+        AnnotatedClassUsage usage =
+                scanAndGetSingleAnnotationUsage(ClassArrayUsageAsField.class, CLASS_USAGE)
+                        .asAnnotatedClassUsage();
+        Assert.assertEquals(convertClassNameToVmFormat(ClassArrayUsageAsField.class), usage.getSourceClass());
+        Assert.assertEquals(convertClassNameToVmFormat(InterfaceWithExperimental.class), usage.getReferencedClass());
+    }
+
+    @Test
+    @Ignore("Just referencing a class in a declaration doesn't seem to add it unless it is actually used, as in testClassUsageAsMethodBody()")
     public void testClassUsageAsMethodParameter() throws Exception {
         AnnotatedClassUsage usage =
                 scanAndGetSingleAnnotationUsage(ClassUsageAsMethodParameter.class, CLASS_USAGE)
                         .asAnnotatedClassUsage();
         Assert.assertEquals(convertClassNameToVmFormat(ClassUsageAsMethodParameter.class), usage.getSourceClass());
         Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimental.class), usage.getReferencedClass());
+    }
+
+    @Test
+    @Ignore("Just referencing a class in a declaration doesn't seem to add it unless it is actually used, as in testClassUsageAsMethodBody()")
+    public void testClassArrayUsageAsMethodParameter() throws Exception {
+        AnnotatedClassUsage usage =
+                scanAndGetSingleAnnotationUsage(ClassArrayUsageAsMethodParameter.class, CLASS_USAGE)
+                        .asAnnotatedClassUsage();
+        Assert.assertEquals(convertClassNameToVmFormat(ClassArrayUsageAsMethodParameter.class), usage.getSourceClass());
+        Assert.assertEquals(convertClassNameToVmFormat(InterfaceWithExperimental.class), usage.getReferencedClass());
     }
 
     @Test
@@ -203,12 +227,31 @@ public class RuntimeTestCase {
     }
 
     @Test
+    @Ignore("Just referencing a class in a declaration doesn't seem to add it unless it is actually used, as in testClassUsageAsMethodBody()")
+    public void testClassArrayUsageAsMethodReturnType() throws Exception {
+        AnnotatedClassUsage usage =
+                scanAndGetSingleAnnotationUsage(ClassArrayUsageAsMethodReturnType.class, CLASS_USAGE)
+                        .asAnnotatedClassUsage();
+        Assert.assertEquals(convertClassNameToVmFormat(ClassArrayUsageAsMethodReturnType.class), usage.getSourceClass());
+        Assert.assertEquals(convertClassNameToVmFormat(InterfaceWithExperimental.class), usage.getReferencedClass());
+    }
+
+    @Test
     public void testClassUsageAsMethodBody() throws Exception {
         AnnotatedClassUsage usage =
                 scanAndGetSingleAnnotationUsage(ClassUsageInMethodBody.class, CLASS_USAGE)
                         .asAnnotatedClassUsage();
         Assert.assertEquals(convertClassNameToVmFormat(ClassUsageInMethodBody.class), usage.getSourceClass());
         Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimental.class), usage.getReferencedClass());
+    }
+
+    @Test
+    public void testClassArrayUsageAsMethodBody() throws Exception {
+        AnnotatedClassUsage usage =
+                scanAndGetSingleAnnotationUsage(ClassArrayUsageInMethodBody.class, CLASS_USAGE)
+                        .asAnnotatedClassUsage();
+        Assert.assertEquals(convertClassNameToVmFormat(ClassArrayUsageInMethodBody.class), usage.getSourceClass());
+        Assert.assertEquals(convertClassNameToVmFormat(InterfaceWithExperimental.class), usage.getReferencedClass());
     }
 
 
