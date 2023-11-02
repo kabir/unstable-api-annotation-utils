@@ -2,6 +2,7 @@ package org.wildfly.experimental.api.classpath.index;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.experimental.api.classpath.index.classes.AnnotationWithExperimental;
 import org.wildfly.experimental.api.classpath.index.classes.AnnotationWithExperimentalMethods;
@@ -14,6 +15,10 @@ import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperim
 import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperimentalMethods;
 import org.wildfly.experimental.api.classpath.index.classes.usage.ClassExtendsUsage;
 import org.wildfly.experimental.api.classpath.index.classes.usage.ClassImplementsUsage;
+import org.wildfly.experimental.api.classpath.index.classes.usage.ClassUsageAsField;
+import org.wildfly.experimental.api.classpath.index.classes.usage.ClassUsageAsMethodParameter;
+import org.wildfly.experimental.api.classpath.index.classes.usage.ClassUsageAsMethodReturnType;
+import org.wildfly.experimental.api.classpath.index.classes.usage.ClassUsageInMethodBody;
 import org.wildfly.experimental.api.classpath.index.classes.usage.ConstructorReference;
 import org.wildfly.experimental.api.classpath.index.classes.usage.FieldReference;
 import org.wildfly.experimental.api.classpath.index.classes.usage.MethodReference;
@@ -21,6 +26,7 @@ import org.wildfly.experimental.api.classpath.index.classes.usage.NoUsage;
 import org.wildfly.experimental.api.classpath.index.classes.usage.StaticFieldReference;
 import org.wildfly.experimental.api.classpath.index.classes.usage.StaticMethodReference;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotatedClassUsage;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotatedFieldReference;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotatedMethodReference;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsage;
@@ -35,6 +41,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.CLASS_USAGE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.EXTENDS_CLASS;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.FIELD_REFERENCE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.IMPLEMENTS_INTERFACE;
@@ -74,7 +81,8 @@ public class RuntimeTestCase {
     @Test
     public void testClassExtendsUsage() throws Exception {
         ExtendsAnnotatedClass usage =
-                scanAndGetSingleAnnotationUsage(ClassExtendsUsage.class, EXTENDS_CLASS, ExtendsAnnotatedClass.class);
+                scanAndGetSingleAnnotationUsage(ClassExtendsUsage.class, EXTENDS_CLASS)
+                        .asExtendsAnnotatedClass();
 
         Assert.assertEquals(convertClassNameToVmFormat(ClassExtendsUsage.class), usage.getSourceClass());
         Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimental.class), usage.getSuperClass());
@@ -85,7 +93,8 @@ public class RuntimeTestCase {
     @Test
     public void testClassImplementsUsage() throws Exception {
         ImplementsAnnotatedInterface usage =
-                scanAndGetSingleAnnotationUsage(ClassImplementsUsage.class, IMPLEMENTS_INTERFACE, ImplementsAnnotatedInterface.class);
+                scanAndGetSingleAnnotationUsage(ClassImplementsUsage.class, IMPLEMENTS_INTERFACE)
+                        .asImplementsAnnotatedInterface();
 
         Assert.assertEquals(convertClassNameToVmFormat(ClassImplementsUsage.class), usage.getSourceClass());
         Assert.assertEquals(convertClassNameToVmFormat(InterfaceWithExperimental.class), usage.getInterface());
@@ -96,7 +105,8 @@ public class RuntimeTestCase {
     @Test
     public void testConstructorReference() throws Exception {
         AnnotatedMethodReference usage =
-                scanAndGetSingleAnnotationUsage(ConstructorReference.class, METHOD_REFERENCE, AnnotatedMethodReference.class);
+                scanAndGetSingleAnnotationUsage(ConstructorReference.class, METHOD_REFERENCE)
+                        .asAnnotatedMethodReference();
 
         Assert.assertEquals(convertClassNameToVmFormat(ConstructorReference.class), usage.getSourceClass());
         Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimentalConstructors.class), usage.getMethodClass());
@@ -109,7 +119,8 @@ public class RuntimeTestCase {
     @Test
     public void testFieldReference() throws Exception {
         AnnotatedFieldReference usage =
-                scanAndGetSingleAnnotationUsage(FieldReference.class, FIELD_REFERENCE, AnnotatedFieldReference.class);
+                scanAndGetSingleAnnotationUsage(FieldReference.class, FIELD_REFERENCE)
+                        .asAnnotatedFieldReference();
 
         Assert.assertEquals(convertClassNameToVmFormat(FieldReference.class), usage.getSourceClass());
         Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimentalFields.class), usage.getFieldClass());
@@ -121,7 +132,8 @@ public class RuntimeTestCase {
     @Test
     public void testStaticFieldReference() throws Exception {
         AnnotatedFieldReference usage =
-                scanAndGetSingleAnnotationUsage(StaticFieldReference.class, FIELD_REFERENCE, AnnotatedFieldReference.class);
+                scanAndGetSingleAnnotationUsage(StaticFieldReference.class, FIELD_REFERENCE)
+                        .asAnnotatedFieldReference();
 
         Assert.assertEquals(convertClassNameToVmFormat(StaticFieldReference.class), usage.getSourceClass());
         Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimentalFields.class), usage.getFieldClass());
@@ -133,7 +145,8 @@ public class RuntimeTestCase {
     @Test
     public void testMethodReference() throws Exception {
         AnnotatedMethodReference usage =
-                scanAndGetSingleAnnotationUsage(MethodReference.class, METHOD_REFERENCE, AnnotatedMethodReference.class);
+                scanAndGetSingleAnnotationUsage(MethodReference.class, METHOD_REFERENCE)
+                        .asAnnotatedMethodReference();
 
         Assert.assertEquals(convertClassNameToVmFormat(MethodReference.class), usage.getSourceClass());
         Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimentalMethods.class), usage.getMethodClass());
@@ -146,7 +159,8 @@ public class RuntimeTestCase {
     @Test
     public void testStaticMethodReference() throws Exception {
         AnnotatedMethodReference usage =
-                scanAndGetSingleAnnotationUsage(StaticMethodReference.class, METHOD_REFERENCE, AnnotatedMethodReference.class);
+                scanAndGetSingleAnnotationUsage(StaticMethodReference.class, METHOD_REFERENCE)
+                        .asAnnotatedMethodReference();
 
         Assert.assertEquals(convertClassNameToVmFormat(StaticMethodReference.class), usage.getSourceClass());
         Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimentalMethods.class), usage.getMethodClass());
@@ -156,19 +170,58 @@ public class RuntimeTestCase {
         Assert.assertEquals(Collections.singleton(Experimental.class.getName()), usage.getAnnotations());
     }
 
+    //TODO If this turns out to be important, we might want to look at the UTF8Infos where the classname appears
+    // If it is a match, temporarily record it. If the not registered by the normal means then we will need to search fields + methods
+    @Test
+    @Ignore("Just referencing a class in a declaration doesn't seem to add it unless it is actually used, as in testClassUsageAsMethodBody()")
+    public void testClassUsageAsField() throws Exception {
+        AnnotatedClassUsage usage =
+                scanAndGetSingleAnnotationUsage(ClassUsageAsField.class, CLASS_USAGE)
+                        .asAnnotatedClassUsage();
+        Assert.assertEquals(convertClassNameToVmFormat(ClassUsageAsField.class), usage.getSourceClass());
+        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimental.class), usage.getReferencedClass());
+    }
+
+    @Test
+    @Ignore("Just referencing a class in a declaration doesn't seem to add it unless it is actually used, as in testClassUsageAsMethodBody()")
+    public void testClassUsageAsMethodParameter() throws Exception {
+        AnnotatedClassUsage usage =
+                scanAndGetSingleAnnotationUsage(ClassUsageAsMethodParameter.class, CLASS_USAGE)
+                        .asAnnotatedClassUsage();
+        Assert.assertEquals(convertClassNameToVmFormat(ClassUsageAsMethodParameter.class), usage.getSourceClass());
+        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimental.class), usage.getReferencedClass());
+    }
+
+    @Test
+    @Ignore("Just referencing a class in a declaration doesn't seem to add it unless it is actually used, as in testClassUsageAsMethodBody()")
+    public void testClassUsageAsMethodReturnType() throws Exception {
+        AnnotatedClassUsage usage =
+                scanAndGetSingleAnnotationUsage(ClassUsageAsMethodReturnType.class, CLASS_USAGE)
+                        .asAnnotatedClassUsage();
+        Assert.assertEquals(convertClassNameToVmFormat(ClassUsageAsMethodReturnType.class), usage.getSourceClass());
+        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimental.class), usage.getReferencedClass());
+    }
+
+    @Test
+    public void testClassUsageAsMethodBody() throws Exception {
+        AnnotatedClassUsage usage =
+                scanAndGetSingleAnnotationUsage(ClassUsageInMethodBody.class, CLASS_USAGE)
+                        .asAnnotatedClassUsage();
+        Assert.assertEquals(convertClassNameToVmFormat(ClassUsageInMethodBody.class), usage.getSourceClass());
+        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimental.class), usage.getReferencedClass());
+    }
 
 
-    <T extends AnnotationUsage> T scanAndGetSingleAnnotationUsage(
+    AnnotationUsage scanAndGetSingleAnnotationUsage(
             Class<?> clazz,
-            ClassBytecodeInspector.AnnotationUsageType type,
-            Class<T> usageClass) throws IOException {
+            ClassBytecodeInspector.AnnotationUsageType type) throws IOException {
         ClassBytecodeInspector inspector = new ClassBytecodeInspector(runtimeIndex);
         boolean ok = scanClass(inspector, clazz);
         Assert.assertFalse(ok);
         Assert.assertEquals(1, inspector.getUsages().size());
         AnnotationUsage usage = inspector.getUsages().iterator().next();
         Assert.assertEquals(type, usage.getType());
-        return usageClass.cast(usage);
+        return usage;
     }
 
     String convertClassNameToVmFormat(Class<?> clazz) {

@@ -2,15 +2,20 @@ package org.wildfly.experimental.api.classpath.runtime.bytecode;
 
 import org.wildfly.experimental.api.classpath.index.RuntimeIndex;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ConstantPool.AbstractRefInfo;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.ConstantPool.ClassInfo;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ConstantPool.NameAndTypeInfo;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.CLASS_USAGE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.EXTENDS_CLASS;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.IMPLEMENTS_INTERFACE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.FIELD_REFERENCE;
@@ -60,6 +65,9 @@ public class ClassBytecodeInspector {
         // Check the constant pool for method (includes constructors) and field references
         ConstantPool constantPool = ConstantPool.read(in);
 
+        // Class references might also come from extends/implements, so defer registering those until the end
+        ClassReferences classReferences = new ClassReferences();
+
         for (ConstantPool.Info info : constantPool.pool) {
             if (info == null) {
                 continue;
@@ -89,6 +97,14 @@ public class ClassBytecodeInspector {
 
                     break;
                 }
+                case ConstantPool.CONSTANT_Class:
+                    ClassInfo classInfo = (ClassInfo) info;
+                    String otherClass = constantPool.utf8(classInfo.class_index);
+                    Set<String> annotations = runtimeIndex.getAnnotationsForClass(otherClass);
+                    if (annotations != null) {
+                        // Don't record this right away, since class usage might come from the other ways of referencing
+                        classReferences.classes.put(otherClass, annotations);
+                    }
                 // TODO might need to look into MethodHandle etc.
             }
         }
@@ -108,6 +124,7 @@ public class ClassBytecodeInspector {
             Set<String> annotations = runtimeIndex.getAnnotationsForClass(superClass);
             if (annotations != null) {
                 recordSuperClassUsage(annotations, className, superClass);
+                classReferences.indirectReferences.add(superClass);
                 noAnnotationUsage = false;
             }
         }
@@ -120,9 +137,13 @@ public class ClassBytecodeInspector {
             Set<String> annotations = runtimeIndex.getAnnotationsForClass(iface);
             if (annotations != null) {
                 recordImplementsInterfaceUsage(annotations, className, iface);
+                classReferences.indirectReferences.add(iface);
                 noAnnotationUsage = false;
             }
         }
+
+        noAnnotationUsage = noAnnotationUsage && classReferences.recordClassUsage(className);
+
         return noAnnotationUsage;
     }
 
@@ -140,6 +161,27 @@ public class ClassBytecodeInspector {
 
     private void recordMethodUsage(Set<String> annotations, String className, String methodClass, String methodName, String descriptor) {
         usages.add(new AnnotatedMethodReference(annotations, className, methodClass, methodName, descriptor));
+    }
+
+
+    // For classes, we defer the recording of annotations since they may come indirectly from extends and implements etc.
+    private class ClassReferences {
+        // Classes referenced by extends/implements etc.
+        private final Set<String> indirectReferences = new HashSet<>();
+        // Annotations for class references
+        private final Map<String, Set<String>> classes = new HashMap<>();
+
+        boolean recordClassUsage(String className) {
+            boolean empty = true;
+            for (String s : indirectReferences) {
+                classes.remove(s);
+            }
+            for (String referencedClass : classes.keySet()) {
+                usages.add(new AnnotatedClassUsage(classes.get(referencedClass), className, referencedClass));
+                empty = false;
+            }
+            return empty;
+        }
     }
 
     public static abstract class AnnotationUsage {
@@ -165,25 +207,39 @@ public class ClassBytecodeInspector {
             return sourceClass;
         }
 
-        public ExtendsAnnotatedClass asExtendsAnnotatedClass(AnnotationUsage usage) {
+        public ExtendsAnnotatedClass asExtendsAnnotatedClass() {
             if (type != EXTENDS_CLASS) {
                 throw new IllegalStateException();
             }
             return (ExtendsAnnotatedClass) this;
         }
 
-        public AnnotatedMethodReference asAnnotatedMethodReference(AnnotationUsage usage) {
+        public ImplementsAnnotatedInterface asImplementsAnnotatedInterface() {
+            if (type != IMPLEMENTS_INTERFACE) {
+                throw new IllegalStateException();
+            }
+            return (ImplementsAnnotatedInterface) this;
+        }
+
+        public AnnotatedMethodReference asAnnotatedMethodReference() {
             if (type != METHOD_REFERENCE) {
                 throw new IllegalStateException();
             }
             return (AnnotatedMethodReference) this;
         }
 
-        public AnnotatedFieldReference asAnnotatedFieldReference(AnnotationUsage usage) {
+        public AnnotatedFieldReference asAnnotatedFieldReference() {
             if (type != FIELD_REFERENCE) {
                 throw new IllegalStateException();
             }
             return (AnnotatedFieldReference) this;
+        }
+
+        public AnnotatedClassUsage asAnnotatedClassUsage() {
+            if (type != CLASS_USAGE) {
+                throw new IllegalStateException();
+            }
+            return (AnnotatedClassUsage) this;
         }
     }
 
@@ -256,11 +312,27 @@ public class ClassBytecodeInspector {
         }
     }
 
+    public static class AnnotatedClassUsage extends AnnotationUsage {
+        private final String referencedClass;
+
+        public AnnotatedClassUsage(Set<String> annotations, String className, String referencedClass) {
+            super(annotations, CLASS_USAGE, className);
+            this.referencedClass = referencedClass;
+        }
+
+        public String getReferencedClass() {
+            return referencedClass;
+        }
+    }
+
+
     public enum AnnotationUsageType {
         EXTENDS_CLASS,
         IMPLEMENTS_INTERFACE,
         METHOD_REFERENCE,
-        FIELD_REFERENCE;
-
+        FIELD_REFERENCE,
+        CLASS_USAGE;
     }
+
+
 }
