@@ -1,5 +1,7 @@
 package org.wildfly.experimental.api.classpath.runtime.bytecode;
 
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationTarget;
 import org.wildfly.experimental.api.classpath.index.RuntimeIndex;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ConstantPool.AbstractRefInfo;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ConstantPool.ClassInfo;
@@ -9,16 +11,18 @@ import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.ANNOTATION_USAGE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.CLASS_USAGE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.EXTENDS_CLASS;
-import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.IMPLEMENTS_INTERFACE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.FIELD_REFERENCE;
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.IMPLEMENTS_INTERFACE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.METHOD_REFERENCE;
 
 public class ClassBytecodeInspector {
@@ -36,10 +40,6 @@ public class ClassBytecodeInspector {
 
     public Set<AnnotationUsage> getUsages() {
         return usages;
-    }
-
-    public RuntimeIndex getRuntimeIndex() {
-        return runtimeIndex;
     }
 
     /**
@@ -151,6 +151,29 @@ public class ClassBytecodeInspector {
         return noAnnotationUsage;
     }
 
+    public boolean checkAnnotationIndex(JandexIndex annotationIndex) {
+        boolean noAnnotationUsage = true;
+        Set<String> annotations = new HashSet<>();
+        for (String annotation : runtimeIndex.getAnnotatedAnnotations()) {
+            Collection<AnnotationInstance> annotationInstances =  annotationIndex.getAnnotations(annotation);
+            if (!annotationInstances.isEmpty()) {
+                // TODO it would be good to record WHERE the annotations are referenced from. At least the class where it happens.
+                // But I am not sure about what some of the 'Kind's returned by AnnotationInstance.target().kind are at the moment.
+                // The ones I am unsure about are Kind.TYPE and Kind.RECORD_COMPONENT
+                annotations.add(annotation);
+                noAnnotationUsage = false;
+            }
+        }
+        if (annotations.size() > 0) {
+            usages.add(new AnnotatedAnnotation(annotations));
+        }
+        return noAnnotationUsage;
+    }
+
+    private void recordAnnotationUsage(Set<String> annotations) {
+
+    }
+
     private void recordSuperClassUsage(Set<String> annotations, String clazz, String superClass) {
         usages.add(new ExtendsAnnotatedClass(annotations, clazz, superClass));
     }
@@ -191,12 +214,10 @@ public class ClassBytecodeInspector {
     public static abstract class AnnotationUsage {
         private final Set<String> annotations;
         private final AnnotationUsageType type;
-        private final String sourceClass;
 
-        public AnnotationUsage(Set<String> annotations, AnnotationUsageType type, String sourceClass) {
+        public AnnotationUsage(Set<String> annotations, AnnotationUsageType type) {
             this.annotations = annotations;
             this.type = type;
-            this.sourceClass = RuntimeIndex.convertClassNameToVmFormat(sourceClass);
         }
 
         public AnnotationUsageType getType() {
@@ -205,10 +226,6 @@ public class ClassBytecodeInspector {
 
         public Set<String> getAnnotations() {
             return annotations;
-        }
-
-        public String getSourceClass() {
-            return sourceClass;
         }
 
         public ExtendsAnnotatedClass asExtendsAnnotatedClass() {
@@ -245,9 +262,28 @@ public class ClassBytecodeInspector {
             }
             return (AnnotatedClassUsage) this;
         }
+        public AnnotatedAnnotation asAnnotatedAnnotation() {
+            if (type != ANNOTATION_USAGE) {
+                throw new IllegalStateException();
+            }
+            return (AnnotatedAnnotation) this;
+        }
     }
 
-    public static class ExtendsAnnotatedClass extends AnnotationUsage {
+    public static class AnnotationWithSourceClassUsage extends AnnotationUsage {
+        private final String sourceClass;
+
+        public AnnotationWithSourceClassUsage(Set<String> annotations, AnnotationUsageType type, String sourceClass) {
+            super(annotations, type);
+            this.sourceClass = RuntimeIndex.convertClassNameToVmFormat(sourceClass);
+        }
+
+        public String getSourceClass() {
+            return sourceClass;
+        }
+    }
+
+    public static class ExtendsAnnotatedClass extends AnnotationWithSourceClassUsage {
         private final String superClass;
 
         protected ExtendsAnnotatedClass(Set<String> annotations, String clazz, String superClass) {
@@ -260,7 +296,7 @@ public class ClassBytecodeInspector {
         }
     }
 
-    public static class ImplementsAnnotatedInterface extends AnnotationUsage {
+    public static class ImplementsAnnotatedInterface extends AnnotationWithSourceClassUsage {
         private final String iface;
         public ImplementsAnnotatedInterface(Set<String> annotations, String clazz, String iface) {
             super(annotations, IMPLEMENTS_INTERFACE, clazz);
@@ -272,7 +308,7 @@ public class ClassBytecodeInspector {
         }
     }
 
-    public static class AnnotatedFieldReference extends AnnotationUsage {
+    public static class AnnotatedFieldReference extends AnnotationWithSourceClassUsage {
         private final String fieldClass;
         private final String fieldName;
 
@@ -291,7 +327,7 @@ public class ClassBytecodeInspector {
         }
     }
 
-    public static class AnnotatedMethodReference extends AnnotationUsage {
+    public static class AnnotatedMethodReference extends AnnotationWithSourceClassUsage {
         private final String methodClass;
         private final String methodName;
         private final String descriptor;
@@ -316,7 +352,7 @@ public class ClassBytecodeInspector {
         }
     }
 
-    public static class AnnotatedClassUsage extends AnnotationUsage {
+    public static class AnnotatedClassUsage extends AnnotationWithSourceClassUsage {
         private final String referencedClass;
 
         public AnnotatedClassUsage(Set<String> annotations, String className, String referencedClass) {
@@ -330,12 +366,20 @@ public class ClassBytecodeInspector {
     }
 
 
+    public static class AnnotatedAnnotation extends AnnotationUsage {
+        public AnnotatedAnnotation(Set<String> annotations) {
+            super(annotations, ANNOTATION_USAGE);
+        }
+
+    }
+
     public enum AnnotationUsageType {
         EXTENDS_CLASS,
         IMPLEMENTS_INTERFACE,
         METHOD_REFERENCE,
         FIELD_REFERENCE,
-        CLASS_USAGE;
+        CLASS_USAGE,
+        ANNOTATION_USAGE;
     }
 
 

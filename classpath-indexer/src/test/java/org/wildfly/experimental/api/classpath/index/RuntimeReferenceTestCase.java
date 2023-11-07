@@ -52,7 +52,10 @@ import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytec
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.IMPLEMENTS_INTERFACE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.METHOD_REFERENCE;
 
-public class RuntimeTestCase {
+/**
+ * Tests non-annotation usage of references annotated with experimental annotations
+ */
+public class RuntimeReferenceTestCase {
     private static final String EXPERIMENTAL_ANNOTATION = Experimental.class.getName();
     RuntimeIndex runtimeIndex;
     @Before
@@ -283,7 +286,7 @@ public class RuntimeTestCase {
 
     private boolean scanClass(ClassBytecodeInspector inspector, Class<?> clazz) throws IOException {
         String classLocation = clazz.getName().replaceAll("\\.", "/") + ".class";
-        URL url = RuntimeTestCase.class.getClassLoader().getResource(classLocation);
+        URL url = RuntimeReferenceTestCase.class.getClassLoader().getResource(classLocation);
         try (InputStream in = url.openStream()) {
             return inspector.scanClassFile(clazz.getName(), in);
         }

@@ -3,6 +3,7 @@ package org.wildfly.experimental.api.classpath.index;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,10 +36,10 @@ public class RuntimeIndex {
                          Map<String, Set<String>> annotationsWithAnnotations,
                          Map<String, Map<String, Map<String, Set<String>>>> methodsWithAnnotations,
                          Map<String, Map<String, Set<String>>> fieldsWithAnnotations) {
-        this.allClassesWithAnnotations = allClassesWithAnnotations;
-        this.annotationsWithAnnotations = annotationsWithAnnotations;
-        this.methodsWithAnnotations = methodsWithAnnotations;
-        this.fieldsWithAnnotations = fieldsWithAnnotations;
+        this.allClassesWithAnnotations = Collections.unmodifiableMap(allClassesWithAnnotations);
+        this.annotationsWithAnnotations = Collections.unmodifiableMap(annotationsWithAnnotations);
+        this.methodsWithAnnotations = Collections.unmodifiableMap(methodsWithAnnotations);
+        this.fieldsWithAnnotations = Collections.unmodifiableMap(fieldsWithAnnotations);
     }
 
     public static RuntimeIndex load(Path indexFile, Path... additional) throws IOException {
@@ -90,7 +91,8 @@ public class RuntimeIndex {
             String vmClass = convertClassNameToVmFormat(clazz);
             Set<String> classAnnotations = getOrCreate(classesWithAnnotations, vmClass, () -> new HashSet<>());
             classAnnotations.add(annotation);
-            Set<String> annAnnotations = getOrCreate(annotationsWithAnnotations, vmClass, () -> new HashSet<>());
+            // Since we use Jandex rather than bytecode inspection for this in the RuntimeIndex, just use the raw class name here
+            Set<String> annAnnotations = getOrCreate(annotationsWithAnnotations, clazz, () -> new HashSet<>());
             annAnnotations.add(annotation);
         }
     }
@@ -153,6 +155,10 @@ public class RuntimeIndex {
 
     public Set<String> getAnnotationsForAnnotation(String annotation) {
         return annotationsWithAnnotations.get(annotation);
+    }
+
+    public Set<String> getAnnotatedAnnotations() {
+        return annotationsWithAnnotations.keySet();
     }
 
     public Set<String> getAnnotationsForMethod(String methodClass, String methodName, String methodDescriptor) {
