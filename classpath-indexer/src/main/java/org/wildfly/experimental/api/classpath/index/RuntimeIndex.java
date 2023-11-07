@@ -1,9 +1,11 @@
 package org.wildfly.experimental.api.classpath.index;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -41,6 +43,15 @@ public class RuntimeIndex {
 
     public static RuntimeIndex load(Path indexFile, Path... additional) throws IOException {
         OverallIndex overallIndex = OverallIndex.load(indexFile, additional);
+        return convertOverallIndexToRuntimeIndex(overallIndex);
+    }
+
+    public static RuntimeIndex load(List<URL> urls) throws IOException {
+        OverallIndex overallIndex = OverallIndex.load(urls);
+        return convertOverallIndexToRuntimeIndex(overallIndex);
+    }
+
+    private static RuntimeIndex convertOverallIndexToRuntimeIndex(OverallIndex overallIndex) {
         Map<String, Set<String>> allClassesWithAnnotations = new HashMap<>();
         Map<String, Set<String>> annotationsWithAnnotations = new HashMap<>();
         Map<String, Map<String, Map<String, Set<String>>>> methodsWithAnnotations = new HashMap<>();

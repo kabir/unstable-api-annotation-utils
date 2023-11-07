@@ -38,6 +38,10 @@ public class ClassBytecodeInspector {
         return usages;
     }
 
+    public RuntimeIndex getRuntimeIndex() {
+        return runtimeIndex;
+    }
+
     /**
      * Scans a class file and looks for usage of things annotated by the experimental annotations
      *

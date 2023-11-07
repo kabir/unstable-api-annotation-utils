@@ -7,10 +7,13 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -83,11 +86,28 @@ public class OverallIndex {
         return index;
     }
 
+    public static OverallIndex load(List<URL> urls) throws IOException {
+        OverallIndex index = null;
+        for (URL url : urls) {
+            if (index == null) {
+                index = loadIndex(url);
+            } else {
+                index.merge(loadIndex(url));
+            }
+        }
+        return index;
+    }
+
+
     private static OverallIndex loadIndex(Path path) throws IOException {
         if (!Files.exists(path) || Files.isDirectory(path)) {
             throw new FileNotFoundException(path.toString());
         }
-        try (BufferedReader reader = new BufferedReader(new FileReader(path.toFile()))) {
+        return loadIndex(path.toUri().toURL());
+    }
+
+    private static OverallIndex loadIndex(URL url) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
             Map<String, AnnotationIndex> indexes = AnnotationIndex.loadAll(reader);
             return new OverallIndex(indexes);
         }
