@@ -149,6 +149,10 @@ public class RuntimeIndex {
         return s.replaceAll("\\.", "/");
     }
 
+    public static String convertClassNameToDotFormat(String s) {
+        return s.replaceAll("/", ".");
+    }
+
     public Set<String> getAnnotationsForClass(String className) {
         return allClassesWithAnnotations.get(className);
     }

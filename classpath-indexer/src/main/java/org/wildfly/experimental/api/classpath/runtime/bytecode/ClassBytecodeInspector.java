@@ -18,7 +18,9 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 
+import static org.wildfly.experimental.api.classpath.index.RuntimeIndex.convertClassNameToDotFormat;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.ANNOTATION_USAGE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.CLASS_USAGE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.EXTENDS_CLASS;
@@ -33,6 +35,7 @@ public class ClassBytecodeInspector {
     private final RuntimeIndex runtimeIndex;
 
     private final Set<AnnotationUsage> usages = new LinkedHashSet<>();
+    private final Set<AnnotationUsage> dotNameUsages = new LinkedHashSet<>();
 
 
     public ClassBytecodeInspector(RuntimeIndex runtimeIndex) {
@@ -40,7 +43,12 @@ public class ClassBytecodeInspector {
     }
 
     public Set<AnnotationUsage> getUsages() {
-        return usages;
+        if (usages.size() != dotNameUsages.size()) {
+            for (AnnotationUsage usage : this.usages) {
+                dotNameUsages.add(usage.convertToDotFormat());
+            }
+        }
+        return dotNameUsages;
     }
 
     /**
@@ -293,14 +301,19 @@ public class ClassBytecodeInspector {
         public int hashCode() {
             return Objects.hash(annotations, type);
         }
+
+        // When reading the bytecode, the class names will be in JVM format (e.g. java/lang/Class).
+        // We keep that for fast lookups during the indexing.
+        // When returning the data to the users we convert to the more familiar 'dot format' (i.e. java.lang.Class)
+        protected abstract AnnotationUsage convertToDotFormat();
     }
 
-    public static class AnnotationWithSourceClassUsage extends AnnotationUsage {
+    public static abstract class AnnotationWithSourceClassUsage extends AnnotationUsage {
         protected final String sourceClass;
 
-        public AnnotationWithSourceClassUsage(Set<String> annotations, AnnotationUsageType type, String sourceClass) {
+        private AnnotationWithSourceClassUsage(Set<String> annotations, AnnotationUsageType type, String sourceClass) {
             super(annotations, type);
-            this.sourceClass = RuntimeIndex.convertClassNameToVmFormat(sourceClass);
+            this.sourceClass = sourceClass;
         }
 
         public String getSourceClass() {
@@ -325,7 +338,7 @@ public class ClassBytecodeInspector {
     public static class ExtendsAnnotatedClass extends AnnotationWithSourceClassUsage {
         private final String superClass;
 
-        protected ExtendsAnnotatedClass(Set<String> annotations, String clazz, String superClass) {
+        private ExtendsAnnotatedClass(Set<String> annotations, String clazz, String superClass) {
             super(annotations, EXTENDS_CLASS, clazz);
             this.superClass = superClass;
         }
@@ -347,11 +360,19 @@ public class ClassBytecodeInspector {
         public int hashCode() {
             return Objects.hash(super.hashCode(), superClass);
         }
+
+        @Override
+        protected AnnotationUsage convertToDotFormat() {
+            return new ExtendsAnnotatedClass(
+                    annotations,
+                    convertClassNameToDotFormat(sourceClass),
+                    convertClassNameToDotFormat(superClass));
+        }
     }
 
     public static class ImplementsAnnotatedInterface extends AnnotationWithSourceClassUsage {
         private final String iface;
-        public ImplementsAnnotatedInterface(Set<String> annotations, String clazz, String iface) {
+        private ImplementsAnnotatedInterface(Set<String> annotations, String clazz, String iface) {
             super(annotations, IMPLEMENTS_INTERFACE, clazz);
             this.iface = iface;
         }
@@ -373,13 +394,21 @@ public class ClassBytecodeInspector {
         public int hashCode() {
             return Objects.hash(super.hashCode(), iface);
         }
+
+        @Override
+        protected AnnotationUsage convertToDotFormat() {
+            return new ImplementsAnnotatedInterface(
+                    annotations,
+                    convertClassNameToDotFormat(sourceClass),
+                    convertClassNameToDotFormat(iface));
+        }
     }
 
     public static class AnnotatedFieldReference extends AnnotationWithSourceClassUsage {
         private final String fieldClass;
         private final String fieldName;
 
-        public AnnotatedFieldReference(Set<String> annotations, String className, String fieldClass, String fieldName) {
+        private AnnotatedFieldReference(Set<String> annotations, String className, String fieldClass, String fieldName) {
             super(annotations, FIELD_REFERENCE, className);
             this.fieldClass = fieldClass;
             this.fieldName = fieldName;
@@ -406,6 +435,14 @@ public class ClassBytecodeInspector {
         public int hashCode() {
             return Objects.hash(super.hashCode(), fieldClass, fieldName);
         }
+
+        @Override
+        protected AnnotationUsage convertToDotFormat() {
+            return new AnnotatedFieldReference(
+                    annotations,
+                    convertClassNameToDotFormat(sourceClass),
+                    convertClassNameToDotFormat(fieldClass), fieldName);
+        }
     }
 
     public static class AnnotatedMethodReference extends AnnotationWithSourceClassUsage {
@@ -413,7 +450,7 @@ public class ClassBytecodeInspector {
         private final String methodName;
         private final String descriptor;
 
-        public AnnotatedMethodReference(Set<String> annotations, String className, String methodClass, String methodName, String descriptor) {
+        private AnnotatedMethodReference(Set<String> annotations, String className, String methodClass, String methodName, String descriptor) {
             super(annotations, METHOD_REFERENCE, className);
             this.methodClass = methodClass;
             this.methodName = methodName;
@@ -445,12 +482,22 @@ public class ClassBytecodeInspector {
         public int hashCode() {
             return Objects.hash(super.hashCode(), methodClass, methodName, descriptor);
         }
+
+        @Override
+        protected AnnotationUsage convertToDotFormat() {
+            return new AnnotatedMethodReference(
+                    annotations,
+                    convertClassNameToDotFormat(sourceClass),
+                    convertClassNameToDotFormat(methodClass),
+                    methodName,
+                    descriptor);
+        }
     }
 
     public static class AnnotatedClassUsage extends AnnotationWithSourceClassUsage {
         private final String referencedClass;
 
-        public AnnotatedClassUsage(Set<String> annotations, String className, String referencedClass) {
+        private AnnotatedClassUsage(Set<String> annotations, String className, String referencedClass) {
             super(annotations, CLASS_USAGE, className);
             this.referencedClass = referencedClass;
         }
@@ -472,14 +519,26 @@ public class ClassBytecodeInspector {
         public int hashCode() {
             return Objects.hash(super.hashCode(), referencedClass);
         }
+
+        @Override
+        protected AnnotationUsage convertToDotFormat() {
+            return new AnnotatedClassUsage(
+                    annotations,
+                    convertClassNameToDotFormat(sourceClass),
+                    convertClassNameToDotFormat(referencedClass));
+        }
     }
 
 
     public static class AnnotatedAnnotation extends AnnotationUsage {
-        public AnnotatedAnnotation(Set<String> annotations) {
+        private AnnotatedAnnotation(Set<String> annotations) {
             super(annotations, ANNOTATION_USAGE);
         }
 
+        @Override
+        protected AnnotationUsage convertToDotFormat() {
+            return new AnnotatedAnnotation(annotations);
+        }
     }
 
     public enum AnnotationUsageType {

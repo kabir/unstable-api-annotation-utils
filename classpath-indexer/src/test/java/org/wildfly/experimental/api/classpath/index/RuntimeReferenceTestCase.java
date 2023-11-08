@@ -92,9 +92,8 @@ public class RuntimeReferenceTestCase {
                 scanAndGetSingleAnnotationUsage(ClassExtendsUsage.class, EXTENDS_CLASS)
                         .asExtendsAnnotatedClass();
 
-        Assert.assertEquals(convertClassNameToVmFormat(ClassExtendsUsage.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimental.class), usage.getSuperClass());
-        // TODO is it weird that we are using JVM format for everything else but not here?
+        Assert.assertEquals(ClassExtendsUsage.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(ClassWithExperimental.class.getName(), usage.getSuperClass());
         Assert.assertEquals(Collections.singleton(Experimental.class.getName()), usage.getAnnotations());
     }
 
@@ -104,9 +103,8 @@ public class RuntimeReferenceTestCase {
                 scanAndGetSingleAnnotationUsage(ClassImplementsUsage.class, IMPLEMENTS_INTERFACE)
                         .asImplementsAnnotatedInterface();
 
-        Assert.assertEquals(convertClassNameToVmFormat(ClassImplementsUsage.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(InterfaceWithExperimental.class), usage.getInterface());
-        // TODO is it weird that we are using JVM format for everything else but not here?
+        Assert.assertEquals(ClassImplementsUsage.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(InterfaceWithExperimental.class.getName(), usage.getInterface());
         Assert.assertEquals(Collections.singleton(Experimental.class.getName()), usage.getAnnotations());
     }
 
@@ -116,11 +114,10 @@ public class RuntimeReferenceTestCase {
                 scanAndGetSingleAnnotationUsage(ConstructorReference.class, METHOD_REFERENCE)
                         .asAnnotatedMethodReference();
 
-        Assert.assertEquals(convertClassNameToVmFormat(ConstructorReference.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimentalConstructors.class), usage.getMethodClass());
+        Assert.assertEquals(ConstructorReference.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(ClassWithExperimentalConstructors.class.getName(), usage.getMethodClass());
         Assert.assertEquals(ClassBytecodeInspector.BYTECODE_CONSTRUCTOR_NAME, usage.getMethodName());
         Assert.assertEquals("(Ljava/lang/String;)V", usage.getDescriptor());
-        // TODO is it weird that we are using JVM format for everything else but not here?
         Assert.assertEquals(Collections.singleton(Experimental.class.getName()), usage.getAnnotations());
     }
 
@@ -130,10 +127,9 @@ public class RuntimeReferenceTestCase {
                 scanAndGetSingleAnnotationUsage(FieldReference.class, FIELD_REFERENCE)
                         .asAnnotatedFieldReference();
 
-        Assert.assertEquals(convertClassNameToVmFormat(FieldReference.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimentalFields.class), usage.getFieldClass());
+        Assert.assertEquals(FieldReference.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(ClassWithExperimentalFields.class.getName(), usage.getFieldClass());
         Assert.assertEquals("fieldA", usage.getFieldName());
-        // TODO is it weird that we are using JVM format for everything else but not here?
         Assert.assertEquals(Collections.singleton(Experimental.class.getName()), usage.getAnnotations());
     }
 
@@ -143,10 +139,9 @@ public class RuntimeReferenceTestCase {
                 scanAndGetSingleAnnotationUsage(StaticFieldReference.class, FIELD_REFERENCE)
                         .asAnnotatedFieldReference();
 
-        Assert.assertEquals(convertClassNameToVmFormat(StaticFieldReference.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimentalFields.class), usage.getFieldClass());
+        Assert.assertEquals(StaticFieldReference.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(ClassWithExperimentalFields.class.getName(), usage.getFieldClass());
         Assert.assertEquals("fieldB", usage.getFieldName());
-        // TODO is it weird that we are using JVM format for everything else but not here?
         Assert.assertEquals(Collections.singleton(Experimental.class.getName()), usage.getAnnotations());
     }
 
@@ -156,11 +151,10 @@ public class RuntimeReferenceTestCase {
                 scanAndGetSingleAnnotationUsage(MethodReference.class, METHOD_REFERENCE)
                         .asAnnotatedMethodReference();
 
-        Assert.assertEquals(convertClassNameToVmFormat(MethodReference.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimentalMethods.class), usage.getMethodClass());
+        Assert.assertEquals(MethodReference.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(ClassWithExperimentalMethods.class.getName(), usage.getMethodClass());
         Assert.assertEquals("test", usage.getMethodName());
         Assert.assertEquals("()V", usage.getDescriptor());
-        // TODO is it weird that we are using JVM format for everything else but not here?
         Assert.assertEquals(Collections.singleton(Experimental.class.getName()), usage.getAnnotations());
     }
 
@@ -170,11 +164,10 @@ public class RuntimeReferenceTestCase {
                 scanAndGetSingleAnnotationUsage(StaticMethodReference.class, METHOD_REFERENCE)
                         .asAnnotatedMethodReference();
 
-        Assert.assertEquals(convertClassNameToVmFormat(StaticMethodReference.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimentalMethods.class), usage.getMethodClass());
+        Assert.assertEquals(StaticMethodReference.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(ClassWithExperimentalMethods.class.getName(), usage.getMethodClass());
         Assert.assertEquals("test", usage.getMethodName());
         Assert.assertEquals("(Ljava/lang/String;)V", usage.getDescriptor());
-        // TODO is it weird that we are using JVM format for everything else but not here?
         Assert.assertEquals(Collections.singleton(Experimental.class.getName()), usage.getAnnotations());
     }
 
@@ -186,8 +179,8 @@ public class RuntimeReferenceTestCase {
         AnnotatedClassUsage usage =
                 scanAndGetSingleAnnotationUsage(ClassUsageAsField.class, CLASS_USAGE)
                         .asAnnotatedClassUsage();
-        Assert.assertEquals(convertClassNameToVmFormat(ClassUsageAsField.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimental.class), usage.getReferencedClass());
+        Assert.assertEquals(ClassUsageAsField.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(ClassWithExperimental.class.getName(), usage.getReferencedClass());
     }
 
     @Test
@@ -196,8 +189,8 @@ public class RuntimeReferenceTestCase {
         AnnotatedClassUsage usage =
                 scanAndGetSingleAnnotationUsage(ClassArrayUsageAsField.class, CLASS_USAGE)
                         .asAnnotatedClassUsage();
-        Assert.assertEquals(convertClassNameToVmFormat(ClassArrayUsageAsField.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(InterfaceWithExperimental.class), usage.getReferencedClass());
+        Assert.assertEquals(ClassArrayUsageAsField.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(InterfaceWithExperimental.class.getName(), usage.getReferencedClass());
     }
 
     @Test
@@ -206,8 +199,8 @@ public class RuntimeReferenceTestCase {
         AnnotatedClassUsage usage =
                 scanAndGetSingleAnnotationUsage(ClassUsageAsMethodParameter.class, CLASS_USAGE)
                         .asAnnotatedClassUsage();
-        Assert.assertEquals(convertClassNameToVmFormat(ClassUsageAsMethodParameter.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimental.class), usage.getReferencedClass());
+        Assert.assertEquals(ClassUsageAsMethodParameter.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(ClassWithExperimental.class.getName(), usage.getReferencedClass());
     }
 
     @Test
@@ -216,8 +209,8 @@ public class RuntimeReferenceTestCase {
         AnnotatedClassUsage usage =
                 scanAndGetSingleAnnotationUsage(ClassArrayUsageAsMethodParameter.class, CLASS_USAGE)
                         .asAnnotatedClassUsage();
-        Assert.assertEquals(convertClassNameToVmFormat(ClassArrayUsageAsMethodParameter.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(InterfaceWithExperimental.class), usage.getReferencedClass());
+        Assert.assertEquals(ClassArrayUsageAsMethodParameter.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(InterfaceWithExperimental.class.getName(), usage.getReferencedClass());
     }
 
     @Test
@@ -226,8 +219,8 @@ public class RuntimeReferenceTestCase {
         AnnotatedClassUsage usage =
                 scanAndGetSingleAnnotationUsage(ClassUsageAsMethodReturnType.class, CLASS_USAGE)
                         .asAnnotatedClassUsage();
-        Assert.assertEquals(convertClassNameToVmFormat(ClassUsageAsMethodReturnType.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimental.class), usage.getReferencedClass());
+        Assert.assertEquals(ClassUsageAsMethodReturnType.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(ClassWithExperimental.class.getName(), usage.getReferencedClass());
     }
 
     @Test
@@ -236,8 +229,8 @@ public class RuntimeReferenceTestCase {
         AnnotatedClassUsage usage =
                 scanAndGetSingleAnnotationUsage(ClassArrayUsageAsMethodReturnType.class, CLASS_USAGE)
                         .asAnnotatedClassUsage();
-        Assert.assertEquals(convertClassNameToVmFormat(ClassArrayUsageAsMethodReturnType.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(InterfaceWithExperimental.class), usage.getReferencedClass());
+        Assert.assertEquals(ClassArrayUsageAsMethodReturnType.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(InterfaceWithExperimental.class.getName(), usage.getReferencedClass());
     }
 
     @Test
@@ -246,8 +239,8 @@ public class RuntimeReferenceTestCase {
         AnnotatedClassUsage usage =
                 scanAndGetSingleAnnotationUsage(ClassUsageSetter.class, CLASS_USAGE)
                         .asAnnotatedClassUsage();
-        Assert.assertEquals(convertClassNameToVmFormat(ClassUsageSetter.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimental.class), usage.getReferencedClass());
+        Assert.assertEquals(ClassUsageSetter.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(ClassWithExperimental.class.getName(), usage.getReferencedClass());
     }
 
     @Test
@@ -255,8 +248,8 @@ public class RuntimeReferenceTestCase {
         AnnotatedClassUsage usage =
                 scanAndGetSingleAnnotationUsage(ClassUsageInMethodBody.class, CLASS_USAGE)
                         .asAnnotatedClassUsage();
-        Assert.assertEquals(convertClassNameToVmFormat(ClassUsageInMethodBody.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(ClassWithExperimental.class), usage.getReferencedClass());
+        Assert.assertEquals(ClassUsageInMethodBody.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(ClassWithExperimental.class.getName(), usage.getReferencedClass());
     }
 
     @Test
@@ -264,8 +257,8 @@ public class RuntimeReferenceTestCase {
         AnnotatedClassUsage usage =
                 scanAndGetSingleAnnotationUsage(ClassArrayUsageInMethodBody.class, CLASS_USAGE)
                         .asAnnotatedClassUsage();
-        Assert.assertEquals(convertClassNameToVmFormat(ClassArrayUsageInMethodBody.class), usage.getSourceClass());
-        Assert.assertEquals(convertClassNameToVmFormat(InterfaceWithExperimental.class), usage.getReferencedClass());
+        Assert.assertEquals(ClassArrayUsageInMethodBody.class.getName(), usage.getSourceClass());
+        Assert.assertEquals(InterfaceWithExperimental.class.getName(), usage.getReferencedClass());
     }
 
     AnnotationUsage scanAndGetSingleAnnotationUsage(
@@ -278,10 +271,6 @@ public class RuntimeReferenceTestCase {
         AnnotationUsage usage = inspector.getUsages().iterator().next();
         Assert.assertEquals(type, usage.getType());
         return usage;
-    }
-
-    String convertClassNameToVmFormat(Class<?> clazz) {
-        return RuntimeIndex.convertClassNameToVmFormat(clazz.getName());
     }
 
     private boolean scanClass(ClassBytecodeInspector inspector, Class<?> clazz) throws IOException {
