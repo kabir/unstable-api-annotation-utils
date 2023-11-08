@@ -288,7 +288,7 @@ public class RuntimeReferenceTestCase {
         String classLocation = clazz.getName().replaceAll("\\.", "/") + ".class";
         URL url = RuntimeReferenceTestCase.class.getClassLoader().getResource(classLocation);
         try (InputStream in = url.openStream()) {
-            return inspector.scanClassFile(clazz.getName(), in);
+            return inspector.scanClassFile(in);
         }
     }
 }

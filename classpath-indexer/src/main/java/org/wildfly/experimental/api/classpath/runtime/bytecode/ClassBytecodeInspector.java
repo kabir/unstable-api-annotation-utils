@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.ANNOTATION_USAGE;
@@ -45,13 +46,12 @@ public class ClassBytecodeInspector {
     /**
      * Scans a class file and looks for usage of things annotated by the experimental annotations
      *
-     * @param className The name of the class we are scanning
      * @param classInputStream An input stream with the class bytes. A plain input stream may be used. This method will
      *                         wrap in a BufferedInputStream
      * @return {@code true} if no usage was found
      * @throws IOException
      */
-    public boolean scanClassFile(String className, InputStream classInputStream) throws IOException {
+    public boolean scanClassFile(InputStream classInputStream) throws IOException {
         boolean noAnnotationUsage = true;
         DataInputStream in = new DataInputStream(new BufferedInputStream(classInputStream));
 
@@ -69,8 +69,35 @@ public class ClassBytecodeInspector {
         // Check the constant pool for method (includes constructors) and field references
         ConstantPool constantPool = ConstantPool.read(in);
 
+
+        //////////////////////////////////////////
+        // Read the class, superclass and interfaces
+
         // Class references might also come from extends/implements, so defer registering those until the end
         ClassReferences classReferences = new ClassReferences();
+
+        // Access flags, we don't need this
+        int access_flags = in.readUnsignedShort();
+
+        // The name of this class
+        String scannedClass = constantPool.className(in.readUnsignedShort());
+
+        String superClass = null;
+        int super_class_index = in.readUnsignedShort();
+        if (super_class_index != 0) {
+            superClass = constantPool.className(super_class_index);
+        }
+
+        Set<String> interfaces = new HashSet<>();
+        int interfacesCount = in.readUnsignedShort();
+        for (int i = 0; i < interfacesCount; i++) {
+            int interfaceIndex = in.readUnsignedShort();
+            String iface = constantPool.className(interfaceIndex);
+            interfaces.add(iface);
+        }
+
+        ////////////////////////////////////////////
+        // Now look for references in the parsed class pool
 
         for (ConstantPool.Info info : constantPool.pool) {
             if (info == null) {
@@ -87,14 +114,14 @@ public class ClassBytecodeInspector {
                     if (info.tag() == ConstantPool.CONSTANT_Fieldref) {
                         Set<String> annotations = runtimeIndex.getAnnotationsForField(declaringClass, refName);
                         if (annotations != null) {
-                            recordFieldUsage(annotations, className, declaringClass, refName);
+                            recordFieldUsage(annotations, scannedClass, declaringClass, refName);
                             noAnnotationUsage = false;
                         }
                     } else {
                         String descriptor = constantPool.utf8(nameAndTypeInfo.descriptor_index);
                         Set<String> annotations = runtimeIndex.getAnnotationsForMethod(declaringClass, refName, descriptor);
                         if (annotations != null) {
-                            recordMethodUsage(annotations, className, declaringClass, refName, descriptor);
+                            recordMethodUsage(annotations, scannedClass, declaringClass, refName, descriptor);
                             noAnnotationUsage = false;
                         }
                     }
@@ -113,40 +140,29 @@ public class ClassBytecodeInspector {
             }
         }
 
-        //////////////////////////////////////////
-        // Read and check the superclass and interfaces
-
-        // Access flags, we don't need this
-        int access_flags = in.readUnsignedShort();
-
-        // This class index, we don't need this
-        in.readUnsignedShort();
-
-        int super_class_index = in.readUnsignedShort();
-        if (super_class_index != 0) {
-            String superClass = constantPool.className(super_class_index);
+        // Now check the super class and interfaces
+        if (superClass != null) {
             Set<String> annotations = runtimeIndex.getAnnotationsForClass(superClass);
             if (annotations != null) {
-                recordSuperClassUsage(annotations, className, superClass);
+                recordSuperClassUsage(annotations, scannedClass, superClass);
                 classReferences.indirectReferences.add(superClass);
                 noAnnotationUsage = false;
             }
         }
 
 
-        int interfacesCount = in.readUnsignedShort();
-        for (int i = 0; i < interfacesCount; i++) {
-            int interfaceIndex = in.readUnsignedShort();
-            String iface = constantPool.className(interfaceIndex);
+        for (String iface : interfaces) {
             Set<String> annotations = runtimeIndex.getAnnotationsForClass(iface);
             if (annotations != null) {
-                recordImplementsInterfaceUsage(annotations, className, iface);
+                recordImplementsInterfaceUsage(annotations, scannedClass, iface);
                 classReferences.indirectReferences.add(iface);
                 noAnnotationUsage = false;
             }
         }
 
-        noAnnotationUsage = noAnnotationUsage && classReferences.recordClassUsage(className);
+        noAnnotationUsage = noAnnotationUsage && classReferences.recordClassUsage(scannedClass);
+
+
 
         return noAnnotationUsage;
     }
@@ -168,10 +184,6 @@ public class ClassBytecodeInspector {
             usages.add(new AnnotatedAnnotation(annotations));
         }
         return noAnnotationUsage;
-    }
-
-    private void recordAnnotationUsage(Set<String> annotations) {
-
     }
 
     private void recordSuperClassUsage(Set<String> annotations, String clazz, String superClass) {
@@ -212,8 +224,8 @@ public class ClassBytecodeInspector {
     }
 
     public static abstract class AnnotationUsage {
-        private final Set<String> annotations;
-        private final AnnotationUsageType type;
+        protected final Set<String> annotations;
+        protected final AnnotationUsageType type;
 
         public AnnotationUsage(Set<String> annotations, AnnotationUsageType type) {
             this.annotations = annotations;
@@ -268,10 +280,23 @@ public class ClassBytecodeInspector {
             }
             return (AnnotatedAnnotation) this;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            AnnotationUsage usage = (AnnotationUsage) o;
+            return Objects.equals(annotations, usage.annotations) && type == usage.type;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(annotations, type);
+        }
     }
 
     public static class AnnotationWithSourceClassUsage extends AnnotationUsage {
-        private final String sourceClass;
+        protected final String sourceClass;
 
         public AnnotationWithSourceClassUsage(Set<String> annotations, AnnotationUsageType type, String sourceClass) {
             super(annotations, type);
@@ -280,6 +305,20 @@ public class ClassBytecodeInspector {
 
         public String getSourceClass() {
             return sourceClass;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            AnnotationWithSourceClassUsage that = (AnnotationWithSourceClassUsage) o;
+            return Objects.equals(sourceClass, that.sourceClass);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), sourceClass);
         }
     }
 
@@ -294,6 +333,20 @@ public class ClassBytecodeInspector {
         public String getSuperClass() {
             return superClass;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            ExtendsAnnotatedClass that = (ExtendsAnnotatedClass) o;
+            return Objects.equals(superClass, that.superClass);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), superClass);
+        }
     }
 
     public static class ImplementsAnnotatedInterface extends AnnotationWithSourceClassUsage {
@@ -305,6 +358,20 @@ public class ClassBytecodeInspector {
 
         public String getInterface() {
             return iface;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            ImplementsAnnotatedInterface that = (ImplementsAnnotatedInterface) o;
+            return Objects.equals(iface, that.iface);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), iface);
         }
     }
 
@@ -324,6 +391,20 @@ public class ClassBytecodeInspector {
 
         public String getFieldName() {
             return fieldName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            AnnotatedFieldReference that = (AnnotatedFieldReference) o;
+            return Objects.equals(fieldClass, that.fieldClass) && Objects.equals(fieldName, that.fieldName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), fieldClass, fieldName);
         }
     }
 
@@ -350,6 +431,20 @@ public class ClassBytecodeInspector {
         public String getDescriptor() {
             return descriptor;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            AnnotatedMethodReference that = (AnnotatedMethodReference) o;
+            return Objects.equals(methodClass, that.methodClass) && Objects.equals(methodName, that.methodName) && Objects.equals(descriptor, that.descriptor);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), methodClass, methodName, descriptor);
+        }
     }
 
     public static class AnnotatedClassUsage extends AnnotationWithSourceClassUsage {
@@ -362,6 +457,20 @@ public class ClassBytecodeInspector {
 
         public String getReferencedClass() {
             return referencedClass;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            AnnotatedClassUsage usage = (AnnotatedClassUsage) o;
+            return Objects.equals(referencedClass, usage.referencedClass);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), referencedClass);
         }
     }
 
