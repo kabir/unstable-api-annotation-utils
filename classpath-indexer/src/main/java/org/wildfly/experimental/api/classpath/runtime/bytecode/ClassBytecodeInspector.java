@@ -168,7 +168,7 @@ public class ClassBytecodeInspector {
             }
         }
 
-        noAnnotationUsage = noAnnotationUsage && classReferences.recordClassUsage(scannedClass);
+        noAnnotationUsage = classReferences.recordClassUsage(scannedClass) && noAnnotationUsage;
 
 
 

@@ -19,6 +19,7 @@ import org.wildfly.experimental.api.classpath.index.classes.usage.ClassArrayUsag
 import org.wildfly.experimental.api.classpath.index.classes.usage.ClassArrayUsageInMethodBody;
 import org.wildfly.experimental.api.classpath.index.classes.usage.ClassExtendsUsage;
 import org.wildfly.experimental.api.classpath.index.classes.usage.ClassImplementsUsage;
+import org.wildfly.experimental.api.classpath.index.classes.usage.ClassUsageAndMethodReference;
 import org.wildfly.experimental.api.classpath.index.classes.usage.ClassUsageAsField;
 import org.wildfly.experimental.api.classpath.index.classes.usage.ClassUsageAsMethodParameter;
 import org.wildfly.experimental.api.classpath.index.classes.usage.ClassUsageAsMethodReturnType;
@@ -35,6 +36,7 @@ import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInsp
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotatedFieldReference;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotatedMethodReference;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsage;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.ExtendsAnnotatedClass;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.ImplementsAnnotatedInterface;
 
@@ -45,6 +47,8 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.CLASS_USAGE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.EXTENDS_CLASS;
@@ -261,9 +265,38 @@ public class RuntimeReferenceTestCase {
         Assert.assertEquals(InterfaceWithExperimental.class.getName(), usage.getReferencedClass());
     }
 
+    @Test
+    public void testClassUsageAndMethodReference() throws Exception {
+        ClassBytecodeInspector inspector = new ClassBytecodeInspector(runtimeIndex);
+        Assert.assertFalse(scanClass(inspector, ClassUsageAndMethodReference.class));
+        Assert.assertEquals(2, inspector.getUsages().size());
+        Map<AnnotationUsageType, AnnotationUsage> usages = new HashMap<>();
+        for (AnnotationUsage usage : inspector.getUsages()) {
+            if (usage.getType() == CLASS_USAGE) {
+                usages.put(CLASS_USAGE, usage);
+            } else if (usage.getType() == METHOD_REFERENCE) {
+                usages.put(METHOD_REFERENCE, usage);
+            } else {
+                Assert.fail("Unexpected type");
+            }
+        }
+
+        AnnotatedClassUsage classUsage = usages.get(CLASS_USAGE).asAnnotatedClassUsage();
+        Assert.assertEquals(ClassUsageAndMethodReference.class.getName(), classUsage.getSourceClass());
+        Assert.assertEquals(ClassWithExperimental.class.getName(), classUsage.getReferencedClass());
+        Assert.assertEquals(Collections.singleton(Experimental.class.getName()), classUsage.getAnnotations());
+
+        AnnotatedMethodReference methodReference = usages.get(METHOD_REFERENCE).asAnnotatedMethodReference();
+        Assert.assertEquals(ClassUsageAndMethodReference.class.getName(), methodReference.getSourceClass());
+        Assert.assertEquals(ClassWithExperimentalMethods.class.getName(), methodReference.getMethodClass());
+        Assert.assertEquals("test", methodReference.getMethodName());
+        Assert.assertEquals("()V", methodReference.getDescriptor());
+        Assert.assertEquals(Collections.singleton(Experimental.class.getName()), methodReference.getAnnotations());
+    }
+
     AnnotationUsage scanAndGetSingleAnnotationUsage(
             Class<?> clazz,
-            ClassBytecodeInspector.AnnotationUsageType type) throws IOException {
+            AnnotationUsageType type) throws IOException {
         ClassBytecodeInspector inspector = new ClassBytecodeInspector(runtimeIndex);
         boolean ok = scanClass(inspector, clazz);
         Assert.assertFalse(ok);
