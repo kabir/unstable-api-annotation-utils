@@ -1,7 +1,6 @@
 package org.wildfly.experimental.api.classpath.runtime.bytecode;
 
 import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.AnnotationTarget;
 import org.wildfly.experimental.api.classpath.index.RuntimeIndex;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ConstantPool.AbstractRefInfo;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ConstantPool.ClassInfo;
@@ -18,7 +17,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeSet;
 
 import static org.wildfly.experimental.api.classpath.index.RuntimeIndex.convertClassNameToDotFormat;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.ANNOTATION_USAGE;

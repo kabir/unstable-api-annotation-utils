@@ -32,6 +32,8 @@ class ConstantPool {
 
     final Info[]			pool;
 
+    private static final byte[] NUM_BUFFER = new byte[8];
+
     public ConstantPool(Info[] pool) {
 
         this.pool = pool;
@@ -106,21 +108,15 @@ class ConstantPool {
                     break;
                 }
                 case CONSTANT_Integer : {
-                    readIntegerInfo(in);
-                    // We don't care about the integer value here
-                    pool[index] = IgnoredIntegerInfo.INSTANCE;
+                    skipInteger(in);
                     break;
                 }
                 case CONSTANT_Float : {
-                    readFloatInfo(in);
-                    // We don't care about the float value here
-                    pool[index] = IgnoredFloatInfo.INSTANCE;
+                    skipFloat(in);
                     break;
                 }
                 case CONSTANT_Long : {
-                    readLongInfo(in);
-                    // We don't care about the long value here
-                    pool[index] = IgnoredLongInfo.INSTANCE;
+                    skipLong(in);
                     // For some insane optimization reason, the Long(5) and
                     // Double(6) entries take two slots in the constant pool.
                     // See 4.4.5
@@ -128,9 +124,7 @@ class ConstantPool {
                     break;
                 }
                 case CONSTANT_Double : {
-                    readDoubleInfo(in);
-                    // We don't care about the double value here
-                    pool[index] = IgnoredDoubleInfo.INSTANCE;
+                    skipDouble(in);
                     // For some insane optimization reason, the Long(5) and
                     // Double(6) entries take two slots in the constant pool.
                     // See 4.4.5
@@ -142,7 +136,8 @@ class ConstantPool {
                     break;
                 }
                 case CONSTANT_String : {
-                    pool[index] = StringInfo.read(in);
+                    //pool[index] = StringInfo.read(in);
+                    in.readUnsignedShort();
                     break;
                 }
                 case CONSTANT_Fieldref : {
@@ -200,69 +195,33 @@ class ConstantPool {
         return new Utf8info(constant.intern());
     }
 
-    static Integer readIntegerInfo(DataInput in) throws IOException {
-        int constant = in.readInt();
-        return constant;
+    static void skipInteger(DataInput in) throws IOException {
+        //int constant = in.readInt();
+        // skip 4 bytes
+        in.readFully(NUM_BUFFER, 0, 4);
     }
 
-    static Float readFloatInfo(DataInput in) throws IOException {
-        float constant = in.readFloat();
-        return constant;
+    static void skipFloat(DataInput in) throws IOException {
+        //float constant = in.readFloat();
+        // skip 4 bytes
+        in.readFully(NUM_BUFFER, 0, 4);
     }
 
-    static Long readLongInfo(DataInput in) throws IOException {
-        long constant = in.readLong();
-        return constant;
+    static void skipLong(DataInput in) throws IOException {
+        //long constant = in.readLong();
+        // skip 8 bytes
+        in.readFully(NUM_BUFFER, 0, 8);
     }
 
-    static Double readDoubleInfo(DataInput in) throws IOException {
-        double constant = in.readDouble();
-        return constant;
+    static void skipDouble(DataInput in) throws IOException {
+        //double constant = in.readDouble();
+        // skip 8 bytes
+        in.readFully(NUM_BUFFER, 0, 8);
     }
 
     public interface Info {
         int tag();
     }
-
-
-    // We don't care about Integer values for this purpose
-    public static class IgnoredIntegerInfo implements Info {
-        static final IgnoredIntegerInfo INSTANCE = new IgnoredIntegerInfo();
-
-        @Override
-        public int tag() {
-            return CONSTANT_Integer;
-        }
-    }
-
-    public static class IgnoredFloatInfo implements Info {
-        static final IgnoredFloatInfo INSTANCE = new IgnoredFloatInfo();
-
-        @Override
-        public int tag() {
-            return CONSTANT_Integer;
-        }
-    }
-    
-    public static class IgnoredDoubleInfo implements Info {
-        static final IgnoredDoubleInfo INSTANCE = new IgnoredDoubleInfo();
-
-        @Override
-        public int tag() {
-            return CONSTANT_Integer;
-        }
-    }
-
-    // We don't care about Douvle values for this purpose
-    public static class IgnoredLongInfo implements Info {
-        static final IgnoredLongInfo INSTANCE = new IgnoredLongInfo();
-
-        @Override
-        public int tag() {
-            return CONSTANT_Double;
-        }
-    }
-
 
     public static class Utf8info implements Info {
         public final String value;
@@ -511,7 +470,8 @@ class ConstantPool {
         static <D extends AbstractDynamicInfo> D read(DataInput in, Constructor<D> constructor) throws IOException {
             int bootstrap_method_attr_index = in.readUnsignedShort();
             int name_and_type_index = in.readUnsignedShort();
-            return constructor.init(bootstrap_method_attr_index, name_and_type_index);
+            //return constructor.init(bootstrap_method_attr_index, name_and_type_index);
+            return null;
         }
 
     }
