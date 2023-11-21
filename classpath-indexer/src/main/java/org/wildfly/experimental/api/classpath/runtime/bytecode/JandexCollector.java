@@ -1,12 +1,16 @@
 package org.wildfly.experimental.api.classpath.runtime.bytecode;
 
 import org.jboss.jandex.AdditionalScanInfoHook;
+import org.jboss.jandex.ClassType;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.Type;
 import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex;
 import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.ByteArrayKey;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class JandexCollector implements AdditionalScanInfoHook {
@@ -86,38 +90,70 @@ public class JandexCollector implements AdditionalScanInfoHook {
 
     @Override
     public void endClass() {
+        // Class references might also come from extends/implements, so defer registering those until the end
+        ClassReferences classReferences = new ClassReferences();
+
         for (int pos = 1 ; pos < currentClass.tags.length ; pos++) {
             int tag = currentClass.tags[pos];
             switch (tag) {
                 case CONSTANT_InterfaceMethodref:
                 case CONSTANT_Methodref: {
-                        final int constantPoolPosition = pos;
-                        Set<String> annotations = runtimeIndex.getAnnotationsForMethod(
+                    final int constantPoolPosition = pos;
+                    Set<String> annotations = runtimeIndex.getAnnotationsForMethod(
+                            currentClass.getClassNameFromReference(constantPoolPosition),
+                            () -> currentClass.getNameFromReference(constantPoolPosition),
+                            () -> currentClass.getDescriptorFromReference(constantPoolPosition));
+                    if (annotations != null) {
+                        recordMethodUsage(annotations,
                                 currentClass.getClassNameFromReference(constantPoolPosition),
-                                () -> currentClass.getNameFromReference(constantPoolPosition),
-                                () -> currentClass.getDescriptorFromReference(constantPoolPosition));
-                        if (annotations != null) {
-                            recordMethodUsage(annotations,
-                                    currentClass.getClassNameFromReference(constantPoolPosition),
-                                    currentClass.getNameFromReference(constantPoolPosition),
-                                    currentClass.getDescriptorFromReference(constantPoolPosition));
-                        }
+                                currentClass.getNameFromReference(constantPoolPosition),
+                                currentClass.getDescriptorFromReference(constantPoolPosition));
                     }
-                    break;
+                }
+                break;
                 case CONSTANT_Fieldref: {
                     final int constantPoolPosition = pos;
-                        Set<String> annotations = runtimeIndex.getAnnotationsForField(
-                                currentClass.getClassNameFromReference(constantPoolPosition),
-                                () -> currentClass.getNameFromReference(constantPoolPosition));
-                        if (annotations != null) {
-                            recordFieldUsage(annotations,
-                                    currentClass.getClassNameFromReference(constantPoolPosition),
-                                    currentClass.getNameFromReference(constantPoolPosition));
-                        }
+                    Set<String> annotations = runtimeIndex.getAnnotationsForField(
+                            currentClass.getClassNameFromReference(constantPoolPosition),
+                            () -> currentClass.getNameFromReference(constantPoolPosition));
+                    if (annotations != null) {
+                       recordFieldUsage(annotations,
+                               currentClass.getClassNameFromReference(constantPoolPosition),
+                               currentClass.getNameFromReference(constantPoolPosition));
                     }
-                    break;
+                }
+                break;
+                case CONSTANT_Class: {
+                    ByteArrayKey key = currentClass.getClassNameFromClassInfo(pos);
+                    Set<String> annotations = runtimeIndex.getAnnotationsForClass(key);
+                    if (annotations != null) {
+                        classReferences.classes.put(runtimeIndex.getClassNameFromKey(key), annotations);
+                    }
+                }
+                break;
+            }
+        } // for
+
+        // Now check the superclass and interfaces
+        if (currentClass.superClassType != ClassType.OBJECT_TYPE) {
+            String superClassName = currentClass.superClassType.name().toString();
+            Set<String> annotations = runtimeIndex.getAnnotationsForClass(superClassName);
+            if (annotations != null) {
+                recordSuperClassUsage(annotations, superClassName);
+                classReferences.indirectReferences.add(superClassName);
             }
         }
+
+        for (Type iface : currentClass.interfaceTypes) {
+            String ifaceName = iface.name().toString();
+            Set<String> annotations = runtimeIndex.getAnnotationsForClass(ifaceName);
+            if (annotations != null) {
+                recordImplementsInterfaceUsage(annotations, ifaceName);
+                classReferences.indirectReferences.add(ifaceName);
+            }
+        }
+
+        classReferences.recordClassUsage(currentClass.getScannedClassName());
     }
 
     private void recordMethodUsage(Set<String> annotations, ByteArrayKey classNameFromReference, ByteArrayKey nameFromReference, ByteArrayKey descriptorFromReference) {
@@ -139,6 +175,13 @@ public class JandexCollector implements AdditionalScanInfoHook {
         usages.add(annotatedFieldReference);
     }
 
+    private void recordImplementsInterfaceUsage(Set<String> annotations, String ifaceName) {
+        usages.add(new ImplementsAnnotatedInterface(annotations, currentClass.getScannedClassName(), ifaceName));
+    }
+
+    private void recordSuperClassUsage(Set<String> annotations, String superClassName) {
+        usages.add(new ExtendsAnnotatedClass(annotations, currentClass.getScannedClassName(), superClassName));
+    }
 
     private static class ClassInformation {
         private final int[] tags;
@@ -270,6 +313,26 @@ public class JandexCollector implements AdditionalScanInfoHook {
                 thisNameStr = thisName.toString();
             }
             return thisNameStr;
+        }
+    }
+
+    // For classes, we defer the recording of annotations since they may come indirectly from extends and implements etc.
+    private class ClassReferences {
+        // Classes referenced by extends/implements etc.
+        private final Set<String> indirectReferences = new HashSet<>();
+        // Annotations for class references
+        private final Map<String, Set<String>> classes = new HashMap<>();
+
+        boolean recordClassUsage(String className) {
+            boolean empty = true;
+            for (String s : indirectReferences) {
+                classes.remove(s);
+            }
+            for (String referencedClass : classes.keySet()) {
+                usages.add(new AnnotatedClassUsage(classes.get(referencedClass), className, referencedClass));
+                empty = false;
+            }
+            return empty;
         }
     }
 }

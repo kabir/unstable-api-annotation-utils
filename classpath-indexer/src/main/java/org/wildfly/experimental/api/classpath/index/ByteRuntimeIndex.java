@@ -47,6 +47,7 @@ public class ByteRuntimeIndex {
 
 
     private final Map<ByteArrayKey, String> classNamesByKey;
+    private final Map<String, ByteArrayKey> classKeysByName;
     private final Map<ByteArrayKey, String> methodNamesByKey;
     private final Map<ByteArrayKey, String> fieldNamesByKey;
     private final Map<ByteArrayKey, String> methodDescriptorsByKey;
@@ -58,6 +59,7 @@ public class ByteRuntimeIndex {
                              Map<ByteArrayKey, Set<String>>>> methodsWithAnnotations,
                              Map<ByteArrayKey, Map<ByteArrayKey, Set<String>>> fieldsWithAnnotations,
                              Map<ByteArrayKey, String> classNamesByKey,
+                             Map<String, ByteArrayKey> classKeysByName,
                              Map<ByteArrayKey, String> methodNamesByKey,
                              Map<ByteArrayKey, String> fieldNamesByKey,
                              Map<ByteArrayKey, String> methodDescriptorsByKey) {
@@ -66,6 +68,7 @@ public class ByteRuntimeIndex {
         this.methodsWithAnnotations = Collections.unmodifiableMap(methodsWithAnnotations);
         this.fieldsWithAnnotations = Collections.unmodifiableMap(fieldsWithAnnotations);
         this.classNamesByKey = Collections.unmodifiableMap(classNamesByKey);
+        this.classKeysByName = Collections.unmodifiableMap(classKeysByName);
         this.methodNamesByKey = Collections.unmodifiableMap(methodNamesByKey);
         this.fieldNamesByKey = Collections.unmodifiableMap(fieldNamesByKey);
         this.methodDescriptorsByKey = Collections.unmodifiableMap(methodDescriptorsByKey);
@@ -83,6 +86,7 @@ public class ByteRuntimeIndex {
 
     private static ByteRuntimeIndex convertOverallIndexToRuntimeIndex(OverallIndex overallIndex) {
         Map<ByteArrayKey, String> classNamesByKey = new HashMap<>();
+        Map<String, ByteArrayKey> classKeysByName = new HashMap<>();
         Map<ByteArrayKey, String> methodNamesByKey = new HashMap<>();
         Map<ByteArrayKey, String> fieldNamesByKey = new HashMap<>();
         Map<ByteArrayKey, String> methodDescriptorsByKey = new HashMap<>();
@@ -93,15 +97,15 @@ public class ByteRuntimeIndex {
 
         for (String annotation : overallIndex.getAnnotations()) {
             AnnotationIndex annotationIndex = overallIndex.getAnnotationIndex(annotation);
-            addClassesWithAnnotations(annotation, annotationIndex, allClassesWithAnnotations, annotationsWithAnnotations, classNamesByKey);
-            addMethodsWithAnnotations(annotation, annotationIndex, methodsWithAnnotations, methodNamesByKey, methodDescriptorsByKey, classNamesByKey);
+            addClassesWithAnnotations(annotation, annotationIndex, allClassesWithAnnotations, annotationsWithAnnotations, classNamesByKey, classKeysByName);
+            addMethodsWithAnnotations(annotation, annotationIndex, methodsWithAnnotations, methodNamesByKey, methodDescriptorsByKey, classNamesByKey, classKeysByName);
             // On byte code level the only difference between a constructor and method is the name of the constructor
             // so we add the constructor to the methodsWithAnnotations set
-            addConstructorsWithAnnotations(annotation, annotationIndex, methodsWithAnnotations, methodNamesByKey, methodDescriptorsByKey, classNamesByKey);
-            addFieldsWithAnnotations(annotation, annotationIndex, fieldsWithAnnotations, fieldNamesByKey, classNamesByKey);
+            addConstructorsWithAnnotations(annotation, annotationIndex, methodsWithAnnotations, methodNamesByKey, methodDescriptorsByKey, classNamesByKey, classKeysByName);
+            addFieldsWithAnnotations(annotation, annotationIndex, fieldsWithAnnotations, fieldNamesByKey, classNamesByKey, classKeysByName);
         }
 
-        return new ByteRuntimeIndex(allClassesWithAnnotations, annotationsWithAnnotations, methodsWithAnnotations, fieldsWithAnnotations, classNamesByKey, methodNamesByKey, fieldNamesByKey, methodDescriptorsByKey);
+        return new ByteRuntimeIndex(allClassesWithAnnotations, annotationsWithAnnotations, methodsWithAnnotations, fieldsWithAnnotations, classNamesByKey, classKeysByName, methodNamesByKey, fieldNamesByKey, methodDescriptorsByKey);
     }
 
     private static void addClassesWithAnnotations(
@@ -109,19 +113,22 @@ public class ByteRuntimeIndex {
             AnnotationIndex annotationIndex,
             Map<ByteArrayKey, Set<String>> classesWithAnnotations,
             Map<String, Set<String>> annotationsWithAnnotations,
-            Map<ByteArrayKey, String> classNamesByKey) {
+            Map<ByteArrayKey, String> classNamesByKey,
+            Map<String, ByteArrayKey> classKeysByName) {
 
         for (String clazz : annotationIndex.getAnnotatedClasses()) {
             ByteArrayKey vmClass = convertStringToByteArrayKey(convertClassNameToVmFormat(clazz));
             Set<String> annotations = classesWithAnnotations.computeIfAbsent(vmClass, k -> new HashSet<>());
             annotations.add(annotation);
             classNamesByKey.put(vmClass, clazz);
+            classKeysByName.put(clazz, vmClass);
         }
         for (String clazz : annotationIndex.getAnnotatedInterfaces()) {
             ByteArrayKey vmClass = convertStringToByteArrayKey(convertClassNameToVmFormat(clazz));
             Set<String> annotations = classesWithAnnotations.computeIfAbsent(vmClass, k -> new HashSet<>());
             annotations.add(annotation);
             classNamesByKey.put(vmClass, clazz);
+            classKeysByName.put(clazz, vmClass);
         }
         for (String clazz : annotationIndex.getAnnotatedAnnotations()) {
             ByteArrayKey vmClass = convertStringToByteArrayKey(convertClassNameToVmFormat(clazz));
@@ -133,13 +140,14 @@ public class ByteRuntimeIndex {
         }
     }
 
-    private static void addMethodsWithAnnotations(String annotation, AnnotationIndex annotationIndex, Map<ByteArrayKey, Map<ByteArrayKey, Map<ByteArrayKey, Set<String>>>> methodsWithAnnotations, Map<ByteArrayKey, String> methodNamesByKey, Map<ByteArrayKey, String> methodDescriptorsByKey, Map<ByteArrayKey, String> classNamesByKey) {
+    private static void addMethodsWithAnnotations(String annotation, AnnotationIndex annotationIndex, Map<ByteArrayKey, Map<ByteArrayKey, Map<ByteArrayKey, Set<String>>>> methodsWithAnnotations, Map<ByteArrayKey, String> methodNamesByKey, Map<ByteArrayKey, String> methodDescriptorsByKey, Map<ByteArrayKey, String> classNamesByKey, Map<String, ByteArrayKey> classKeysByName) {
         for (AnnotatedMethod annotatedMethod : annotationIndex.getAnnotatedMethods()) {
             ByteArrayKey vmClass = convertStringToByteArrayKey(convertClassNameToVmFormat(annotatedMethod.getClassName()));
             ByteArrayKey methodname = convertStringToByteArrayKey(annotatedMethod.getMethodName());
             ByteArrayKey descriptor = convertStringToByteArrayKey(annotatedMethod.getDescriptor());
 
             classNamesByKey.put(vmClass, annotatedMethod.getClassName());
+            classKeysByName.put(annotatedMethod.getClassName(), vmClass);
             methodNamesByKey.put(methodname, annotatedMethod.getMethodName());
             methodDescriptorsByKey.put(descriptor, annotatedMethod.getDescriptor());
 
@@ -150,7 +158,7 @@ public class ByteRuntimeIndex {
         }
     }
 
-    private static void addConstructorsWithAnnotations(String annotation, AnnotationIndex annotationIndex, Map<ByteArrayKey, Map<ByteArrayKey, Map<ByteArrayKey, Set<String>>>> methodsWithAnnotations, Map<ByteArrayKey, String> methodNamesByKey, Map<ByteArrayKey, String> methodDescriptorsByKey, Map<ByteArrayKey, String> classNamesByKey) {
+    private static void addConstructorsWithAnnotations(String annotation, AnnotationIndex annotationIndex, Map<ByteArrayKey, Map<ByteArrayKey, Map<ByteArrayKey, Set<String>>>> methodsWithAnnotations, Map<ByteArrayKey, String> methodNamesByKey, Map<ByteArrayKey, String> methodDescriptorsByKey, Map<ByteArrayKey, String> classNamesByKey, Map<String, ByteArrayKey> classKeysByName) {
         methodNamesByKey.put(BYTECODE_CONSTRUCTOR_KEY, BYTECODE_CONSTRUCTOR_NAME);
 
         // On byte code level the only difference between a constructor and method is the name of the constructor
@@ -160,6 +168,7 @@ public class ByteRuntimeIndex {
             ByteArrayKey descriptor = convertStringToByteArrayKey(annotatedConstructor.getDescriptor());
 
             classNamesByKey.put(vmClass, annotatedConstructor.getClassName());
+            classKeysByName.put(annotatedConstructor.getClassName(), vmClass);
             methodDescriptorsByKey.put(descriptor, annotatedConstructor.getDescriptor());
 
             Map<ByteArrayKey, Map<ByteArrayKey, Set<String>>> methodsForClass = methodsWithAnnotations.computeIfAbsent(vmClass, k -> new HashMap<>());
@@ -169,12 +178,13 @@ public class ByteRuntimeIndex {
         }
     }
 
-    private static void addFieldsWithAnnotations(String annotation, AnnotationIndex annotationIndex, Map<ByteArrayKey, Map<ByteArrayKey, Set<String>>> fieldsWithAnnotations, Map<ByteArrayKey, String> fieldNamesByKey, Map<ByteArrayKey, String> classNamesByKey) {
+    private static void addFieldsWithAnnotations(String annotation, AnnotationIndex annotationIndex, Map<ByteArrayKey, Map<ByteArrayKey, Set<String>>> fieldsWithAnnotations, Map<ByteArrayKey, String> fieldNamesByKey, Map<ByteArrayKey, String> classNamesByKey, Map<String, ByteArrayKey> classKeysByName) {
         for (AnnotatedField annotatedField : annotationIndex.getAnnotatedFields()) {
             ByteArrayKey vmClass = convertStringToByteArrayKey(convertClassNameToVmFormat(annotatedField.getClassName()));
             ByteArrayKey fieldName = convertStringToByteArrayKey(annotatedField.getFieldName());
 
             classNamesByKey.put(vmClass, annotatedField.getClassName());
+            classKeysByName.put(annotatedField.getClassName(), vmClass);
             fieldNamesByKey.put(fieldName, annotatedField.getFieldName());
 
             Map<ByteArrayKey, Set<String>> fieldsForClass = fieldsWithAnnotations.computeIfAbsent(vmClass, k -> new HashMap<>());
@@ -201,8 +211,8 @@ public class ByteRuntimeIndex {
         return s.replaceAll("/", ".");
     }
 
-    public Set<String> getAnnotationsForClass(String className) {
-        return allClassesWithAnnotations.get(className);
+    public Set<String> getAnnotationsForClass(ByteArrayKey key) {
+        return allClassesWithAnnotations.get(key);
     }
 
     public Set<String> getAnnotationsForAnnotation(String annotation) {
@@ -248,6 +258,11 @@ public class ByteRuntimeIndex {
 
     public String getMethodDescriptorsFromKey(ByteArrayKey key) {
         return methodDescriptorsByKey.get(key);
+    }
+
+    public Set<String> getAnnotationsForClass(String superClassName) {
+        ByteArrayKey key = classKeysByName.get(superClassName);
+        return getAnnotationsForClass(key);
     }
 
     public static class ByteArrayKey {
