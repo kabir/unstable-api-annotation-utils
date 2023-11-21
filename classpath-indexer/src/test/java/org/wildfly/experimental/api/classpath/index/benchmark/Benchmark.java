@@ -56,9 +56,9 @@ public class Benchmark {
         final int max = 50;
         for (int i = 0; i < max; i++) {
             System.out.println("==== Iteration " + i);
-            //new JarReader(classpath, new NullWorker()).indexJar();
+            new JarReader(classpath, new NullWorker()).indexJar();
             new JarReader(classpath, new InspectorWorker(runtimeIndex)).indexJar();
-            //new JarReader(classpath, new JandexWorker()).indexJar();
+            new JarReader(classpath, new JandexWorker()).indexJar();
         }
     }
 

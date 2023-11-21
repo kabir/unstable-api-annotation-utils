@@ -32,13 +32,13 @@ import org.wildfly.experimental.api.classpath.index.classes.usage.NoUsage;
 import org.wildfly.experimental.api.classpath.index.classes.usage.StaticFieldReference;
 import org.wildfly.experimental.api.classpath.index.classes.usage.StaticMethodReference;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotatedClassUsage;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotatedFieldReference;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotatedMethodReference;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsage;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.ExtendsAnnotatedClass;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.ImplementsAnnotatedInterface;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotatedClassUsage;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotatedFieldReference;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotatedMethodReference;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsage;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.ExtendsAnnotatedClass;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.ImplementsAnnotatedInterface;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,11 +50,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.CLASS_USAGE;
-import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.EXTENDS_CLASS;
-import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.FIELD_REFERENCE;
-import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.IMPLEMENTS_INTERFACE;
-import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.METHOD_REFERENCE;
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.CLASS_USAGE;
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.EXTENDS_CLASS;
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.FIELD_REFERENCE;
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.IMPLEMENTS_INTERFACE;
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.METHOD_REFERENCE;
 
 /**
  * Tests non-annotation usage of references annotated with experimental annotations

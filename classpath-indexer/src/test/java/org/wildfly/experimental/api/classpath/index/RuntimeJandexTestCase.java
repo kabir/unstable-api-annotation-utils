@@ -10,8 +10,8 @@ import org.wildfly.experimental.api.classpath.index.classes.Experimental;
 import org.wildfly.experimental.api.classpath.index.classes.usage.NoUsage;
 import org.wildfly.experimental.api.classpath.index.classes.usage.annotation.AnnotatedClass;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotatedAnnotation;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsage;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotatedAnnotation;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsage;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.JandexIndex;
 
 import java.io.File;
@@ -21,7 +21,7 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 
-import static org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector.AnnotationUsageType.ANNOTATION_USAGE;
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.ANNOTATION_USAGE;
 
 /**
  * Tests usage of annotations annotated with @Experimental.
