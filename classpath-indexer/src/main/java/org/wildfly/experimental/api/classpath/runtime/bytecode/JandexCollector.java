@@ -7,9 +7,11 @@ import org.jboss.jandex.Type;
 import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex;
 import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.ByteArrayKey;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,6 +36,9 @@ public class JandexCollector implements AdditionalScanInfoHook {
 
     private final Set<AnnotationUsage> usages = new LinkedHashSet<>();
     private final Set<AnnotationUsage> dotNameUsages = new LinkedHashSet<>();
+
+    // TODO remove this, it is just here to diagnose errors
+    public List<String> errorClasses = new ArrayList<>();
 
     public JandexCollector(ByteRuntimeIndex runtimeIndex) {
         this.runtimeIndex = runtimeIndex;
@@ -74,9 +79,9 @@ public class JandexCollector implements AdditionalScanInfoHook {
 
     @Override
     public void setClassInfo(DotName thisName, Type superClassType, short flags, Type[] interfaceTypes) {
-        currentClass.thisName = thisName;
-        currentClass.superClassType = superClassType;
-        currentClass.interfaceTypes = interfaceTypes;
+        currentClass.setThisName(thisName);
+        currentClass.setSuperClassType(superClassType);
+        currentClass.setInterfaceTypes(interfaceTypes);
     }
 
     @Override
@@ -90,70 +95,79 @@ public class JandexCollector implements AdditionalScanInfoHook {
 
     @Override
     public void endClass() {
-        // Class references might also come from extends/implements, so defer registering those until the end
-        ClassReferences classReferences = new ClassReferences();
+        //currentClass.getDebugUtils().outputRawFormat();
 
-        for (int pos = 1 ; pos < currentClass.tags.length ; pos++) {
-            int tag = currentClass.tags[pos];
-            switch (tag) {
-                case CONSTANT_InterfaceMethodref:
-                case CONSTANT_Methodref: {
-                    final int constantPoolPosition = pos;
-                    Set<String> annotations = runtimeIndex.getAnnotationsForMethod(
-                            currentClass.getClassNameFromReference(constantPoolPosition),
-                            () -> currentClass.getNameFromReference(constantPoolPosition),
-                            () -> currentClass.getDescriptorFromReference(constantPoolPosition));
-                    if (annotations != null) {
-                        recordMethodUsage(annotations,
+        try {
+            // Class references might also come from extends/implements, so defer registering those until the end
+            ClassReferences classReferences = new ClassReferences();
+
+            for (int pos = 1 ; pos < currentClass.getTags().length ; pos++) {
+                int tag = currentClass.getTags()[pos];
+                switch (tag) {
+                    case CONSTANT_InterfaceMethodref:
+                    case CONSTANT_Methodref: {
+                        final int constantPoolPosition = pos;
+                        Set<String> annotations = runtimeIndex.getAnnotationsForMethod(
                                 currentClass.getClassNameFromReference(constantPoolPosition),
-                                currentClass.getNameFromReference(constantPoolPosition),
-                                currentClass.getDescriptorFromReference(constantPoolPosition));
+                                () -> currentClass.getNameFromReference(constantPoolPosition),
+                                () -> currentClass.getDescriptorFromReference(constantPoolPosition));
+                        if (annotations != null) {
+                            recordMethodUsage(annotations,
+                                    currentClass.getClassNameFromReference(constantPoolPosition),
+                                    currentClass.getNameFromReference(constantPoolPosition),
+                                    currentClass.getDescriptorFromReference(constantPoolPosition));
+                        }
                     }
-                }
-                break;
-                case CONSTANT_Fieldref: {
-                    final int constantPoolPosition = pos;
-                    Set<String> annotations = runtimeIndex.getAnnotationsForField(
-                            currentClass.getClassNameFromReference(constantPoolPosition),
-                            () -> currentClass.getNameFromReference(constantPoolPosition));
-                    if (annotations != null) {
-                       recordFieldUsage(annotations,
-                               currentClass.getClassNameFromReference(constantPoolPosition),
-                               currentClass.getNameFromReference(constantPoolPosition));
+                    break;
+                    case CONSTANT_Fieldref: {
+                        final int constantPoolPosition = pos;
+                        Set<String> annotations = runtimeIndex.getAnnotationsForField(
+                                currentClass.getClassNameFromReference(constantPoolPosition),
+                                () -> currentClass.getNameFromReference(constantPoolPosition));
+                        if (annotations != null) {
+                           recordFieldUsage(annotations,
+                                   currentClass.getClassNameFromReference(constantPoolPosition),
+                                   currentClass.getNameFromReference(constantPoolPosition));
+                        }
                     }
-                }
-                break;
-                case CONSTANT_Class: {
-                    ByteArrayKey key = currentClass.getClassNameFromClassInfo(pos);
-                    Set<String> annotations = runtimeIndex.getAnnotationsForClass(key);
-                    if (annotations != null) {
-                        classReferences.classes.put(runtimeIndex.getClassNameFromKey(key), annotations);
+                    break;
+                    case CONSTANT_Class: {
+                        ByteArrayKey key = currentClass.getClassNameFromClassInfo(pos);
+                        Set<String> annotations = runtimeIndex.getAnnotationsForClass(key);
+                        if (annotations != null) {
+                            classReferences.classes.put(runtimeIndex.getClassNameFromKey(key), annotations);
+                        }
                     }
+                    break;
                 }
-                break;
-            }
-        } // for
+            } // for
 
-        // Now check the superclass and interfaces
-        if (currentClass.superClassType != ClassType.OBJECT_TYPE) {
-            String superClassName = currentClass.superClassType.name().toString();
-            Set<String> annotations = runtimeIndex.getAnnotationsForClass(superClassName);
-            if (annotations != null) {
-                recordSuperClassUsage(annotations, superClassName);
-                classReferences.indirectReferences.add(superClassName);
+            // Now check the superclass and interfaces
+            if (currentClass.getSuperClassType() != null && currentClass.getSuperClassType() != ClassType.OBJECT_TYPE) {
+                String superClassName = currentClass.getSuperClassType().name().toString();
+                Set<String> annotations = runtimeIndex.getAnnotationsForClass(superClassName);
+                if (annotations != null) {
+                    recordSuperClassUsage(annotations, superClassName);
+                    classReferences.indirectReferences.add(superClassName);
+                }
             }
+
+            for (Type iface : currentClass.getInterfaceTypes()) {
+                String ifaceName = iface.name().toString();
+                Set<String> annotations = runtimeIndex.getAnnotationsForClass(ifaceName);
+                if (annotations != null) {
+                    recordImplementsInterfaceUsage(annotations, ifaceName);
+                    classReferences.indirectReferences.add(ifaceName);
+                }
+            }
+
+            classReferences.recordClassUsage(currentClass.getScannedClassName());
+        } catch (RuntimeException e) {
+            //System.err.println("Error in: "  + currentClass.getScannedClassName());
+            // TODO swallowed exception
+            errorClasses.add(currentClass.getScannedClassName());
+            throw e;
         }
-
-        for (Type iface : currentClass.interfaceTypes) {
-            String ifaceName = iface.name().toString();
-            Set<String> annotations = runtimeIndex.getAnnotationsForClass(ifaceName);
-            if (annotations != null) {
-                recordImplementsInterfaceUsage(annotations, ifaceName);
-                classReferences.indirectReferences.add(ifaceName);
-            }
-        }
-
-        classReferences.recordClassUsage(currentClass.getScannedClassName());
     }
 
     private void recordMethodUsage(Set<String> annotations, ByteArrayKey classNameFromReference, ByteArrayKey nameFromReference, ByteArrayKey descriptorFromReference) {
@@ -183,138 +197,46 @@ public class JandexCollector implements AdditionalScanInfoHook {
         usages.add(new ExtendsAnnotatedClass(annotations, currentClass.getScannedClassName(), superClassName));
     }
 
-    private static class ClassInformation {
-        private final int[] tags;
-        private final int[] offsets;
-        private final int[] lengths;
+    private static class ClassInformationOutputter {
+        void output(ClassInformation clInfo) {
+            for (int pos = 1; pos < clInfo.getTags().length; pos++) {
+                if (clInfo.getTags()[pos] == 0) {
+                    outputNotHandledTag(clInfo, pos);
+                    continue;
+                }
+                switch (clInfo.getTags()[pos]) {
+                    case CONSTANT_Methodref:
+                    case CONSTANT_InterfaceMethodref:
+                    case CONSTANT_Fieldref:
 
-        // Cache the ByteArrayKeys read at the corresponding ClassInfo entry locations
-        private final ByteArrayKey[] byteArrayKeys;
-
-        private byte[] constantPool;
-
-        private DotName thisName;
-        private String thisNameStr;
-        private Type superClassType;
-        private Type[] interfaceTypes;
-
-
-        ClassInformation(int constantPoolSize) {
-            tags = new int[constantPoolSize + 1];
-            offsets = new int[constantPoolSize + 1];
-            lengths = new int[constantPoolSize + 1];
-            byteArrayKeys = new ByteArrayKey[constantPoolSize + 1];
-        }
-
-        void addConstantPoolEntry(int pos, int tag, int offset, int length) {
-            tags[pos] = tag;
-            offsets[pos] = offset;
-            lengths[pos] = length;
-        }
-
-        void setClassInfo(DotName thisName, Type superClassType, short flags, Type[] interfaceTypes) {
-            this.thisName = thisName;
-            this.superClassType = superClassType;
-            this.interfaceTypes = interfaceTypes;
-        }
-
-
-        void endConstantPool(byte[] constantPool) {
-            this.constantPool = constantPool;
-        }
-
-        /**
-         * FieldRefInfo, MethodRedInfo and InterfaceRefInfo all have the same structure.
-         * This method gets the value of the first entry
-         * @param constantPoolPosition the position of the XXXRefInfo entry in the constant pool
-         * @return the name of the class containing the reference
-         */
-        ByteArrayKey getClassNameFromReference(int constantPoolPosition) {
-            // The location of the ClassInfo will be the first two bytes
-            int classPosition = readUnsignedShort(offsets[constantPoolPosition]);
-            // Get the name of the class
-            return getClassNameFromClassInfo(classPosition);
-        }
-
-        /**
-         * FieldRefInfo, MethodRedInfo and InterfaceRefInfo all have the same structure.
-         * This method finds the NameAndTypeInfo from the XXX RedInfo. In the NameAndTypeInfo
-         * the index of the UTFInfo containing the name will be stored in the first two bytes.
-         * @param constantPoolPosition the position of the XXXRefInfo entry in the constant pool
-         * @return the name of the field/method pointed at by the XXXRefInfo
-         */
-        ByteArrayKey getNameFromReference(int constantPoolPosition) {
-            int nameAndTypeInfoOffset = getNameAndTypeInfoOffsetFromReference(constantPoolPosition);
-            // The location of the NameAndTypeInfo will be its fist two bytes
-            int refNamePosition = readUnsignedShort(nameAndTypeInfoOffset);
-            return getKeyFromUtfInfo(refNamePosition);
-        }
-
-        /**
-         * FieldRefInfo, MethodRedInfo and InterfaceRefInfo all have the same structure.
-         * This method finds the NameAndTypeInfo from the XXX RedInfo. In the NameAndTypeInfo
-         * the index of the UTFInfo containing the descriptor will be stored in the third and fourth bytes.
-         * @param constantPoolPosition the position of the XXXRefInfo entry in the constant pool
-         * @return the name of the field/method pointed at by the XXXRefInfo
-         */
-        ByteArrayKey getDescriptorFromReference(int constantPoolPosition) {
-            int nameAndTypeInfoOffset = getNameAndTypeInfoOffsetFromReference(constantPoolPosition);
-            // The location of the NameAndTypeInfo will be its third and fourth bytes
-            int refNamePosition = readUnsignedShort(nameAndTypeInfoOffset + 2);
-            return getKeyFromUtfInfo(refNamePosition);
-        }
-
-        /**
-         * FieldRefInfo, MethodRedInfo and InterfaceRefInfo all have the same structure.
-         * This method gets the position of where their NameAndTypeInfo is stored
-         *
-         * @param constantPoolPosition the position of the XXXRefInfo entry in the constant pool
-         * @return the name of the class containing the reference
-         */
-        private int getNameAndTypeInfoOffsetFromReference(int constantPoolPosition) {
-            // The location of the nameandtypeinfo will be the second two bytes
-            int offset = offsets[constantPoolPosition] + 2;
-            int position = readUnsignedShort(offset);
-            return offsets[position];
-        }
-
-        private ByteArrayKey getClassNameFromClassInfo(int constantPoolPosition) {
-            ByteArrayKey key = byteArrayKeys[constantPoolPosition];
-            if (key == null) {
-                // ClassInfo just contains the location of the UtfInfo containing the class bane
-                int utfInfoPosition = readUnsignedShort(offsets[constantPoolPosition]);
-                key = getKeyFromUtfInfo(utfInfoPosition);
-                byteArrayKeys[constantPoolPosition] = key;
+                }
             }
-            return key;
         }
 
-        private ByteArrayKey getKeyFromUtfInfo(int constantPoolPosition) {
-            ByteArrayKey key = byteArrayKeys[constantPoolPosition];
-            if (key == null) {
-                key = ByteArrayKey.create(constantPool, offsets[constantPoolPosition], lengths[constantPoolPosition]);
-                byteArrayKeys[constantPoolPosition] = key;
+        void outputNotHandledTag(ClassInformation clInfo, int pos) {
+            System.out.println("#" + pos + "\t" + clInfo.getTags()[pos] + " " + clInfo.getOffsets()[pos] + clInfo.getOffsets()[pos]);
+        }
+
+        void outputRefInfo(ClassInformation clInfo, int pos) {
+            String tagName;
+            switch (clInfo.getTags()[pos]) {
+                case CONSTANT_Methodref:
+                    tagName = "MRef";
+                    break;
+                case CONSTANT_Fieldref:
+                    tagName = "FRef";
+                    break;
+                case CONSTANT_InterfaceMethodref:
+                    tagName = "IRef";
+                    break;
+                default:
+                    tagName = "????";
             }
-            return key;
+            //System.out.println("#" + pos + "\t" + tagName + clInfo.getClassPositionForReference());
         }
 
-        // Indexes in the array are stored as two bytes, and interpreted as unsigned shorts
-        // This replicates how DataInputStream reads unsigned shorts
-        private int readUnsignedShort(int offset) {
-            int ch1 = constantPool[offset];
-            int ch2 = constantPool[offset + 1];
-            if ((ch1 | ch2) < 0)
-                throw new IllegalStateException();
-            return (ch1 << 8) + (ch2 << 0);
-        }
-
-        String getScannedClassName() {
-            if (thisNameStr == null) {
-                thisNameStr = thisName.toString();
-            }
-            return thisNameStr;
-        }
     }
+
 
     // For classes, we defer the recording of annotations since they may come indirectly from extends and implements etc.
     private class ClassReferences {

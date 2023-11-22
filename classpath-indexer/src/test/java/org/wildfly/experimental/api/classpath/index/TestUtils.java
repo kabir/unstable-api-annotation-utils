@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class TestUtils {
-    static File createJar(Class<?>... classes) throws IOException {
+    public static File createJar(Class<?>... classes) throws IOException {
         String archiveName = System.currentTimeMillis() + ".jar";
         JavaArchive archive = ShrinkWrap.create(JavaArchive.class, archiveName);
         archive.addClasses(classes);

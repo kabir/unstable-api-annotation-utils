@@ -1,8 +1,10 @@
 package org.wildfly.experimental.api.classpath.index.benchmark;
 
 import org.jboss.jandex.Indexer;
+import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex;
 import org.wildfly.experimental.api.classpath.index.RuntimeIndex;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.JandexCollector;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -42,6 +44,7 @@ public class Benchmark {
 
         Path indexFile = indexDir.resolve("index.txt");
         RuntimeIndex runtimeIndex;
+        ByteRuntimeIndex byteRuntimeIndex;
         try (BufferedReader reader = new BufferedReader(new FileReader(indexFile.toFile()))) {
             List<URL> list = new ArrayList<>();
             String line = reader.readLine();
@@ -50,6 +53,7 @@ public class Benchmark {
                 line = reader.readLine();
             }
             runtimeIndex = RuntimeIndex.load(list);
+            byteRuntimeIndex = ByteRuntimeIndex.load(list);
         }
 
 
@@ -59,6 +63,7 @@ public class Benchmark {
             new JarReader(classpath, new NullWorker()).indexJar();
             new JarReader(classpath, new InspectorWorker(runtimeIndex)).indexJar();
             new JarReader(classpath, new JandexWorker()).indexJar();
+            new JarReader(classpath, new JandexCollectorWorker(byteRuntimeIndex)).indexJar();
         }
     }
 
@@ -75,7 +80,7 @@ public class Benchmark {
             long start = System.currentTimeMillis();
             worker.beforeFullScan();
             for (Path zipFilePath : paths) {
-                worker.beforeJar();
+                worker.beforeJar(zipFilePath);
                 try (ZipFile zipFile = new ZipFile(zipFilePath.toFile())) {
                     Enumeration<? extends ZipEntry> entries = zipFile.entries();
                     while (entries.hasMoreElements()) {
@@ -106,7 +111,7 @@ public class Benchmark {
 
         }
 
-        default void beforeJar() throws IOException {
+        default void beforeJar(Path zipFilePath) throws IOException {
 
         }
 
@@ -142,7 +147,7 @@ public class Benchmark {
     private static class JandexWorker implements JarReaderWorker {
         private Indexer indexer;
         @Override
-        public void beforeJar() throws IOException {
+        public void beforeJar(Path zipFilePath) throws IOException {
             indexer = new Indexer();
         }
 
@@ -154,6 +159,46 @@ public class Benchmark {
         @Override
         public void afterJar() throws IOException {
             indexer.complete();
+        }
+    }
+
+
+    private static class JandexCollectorWorker implements JarReaderWorker {
+        private final ByteRuntimeIndex runtimeIndex;
+        private Indexer indexer;
+        private JandexCollector jandexCollector;
+
+        Path currentJar;
+
+        private JandexCollectorWorker(ByteRuntimeIndex runtimeIndex) {
+            this.runtimeIndex = runtimeIndex;
+            jandexCollector = new JandexCollector(runtimeIndex);
+        }
+
+        @Override
+        public void beforeJar(Path zipFilePath) throws IOException {
+            currentJar = zipFilePath;
+            indexer = new Indexer(jandexCollector);
+        }
+
+        @Override
+        public void handleClass(InputStream inputStream) throws IOException {
+            indexer.index(inputStream);
+        }
+
+        @Override
+        public void afterJar() throws IOException {
+            indexer.complete();
+            if (!jandexCollector.errorClasses.isEmpty()) {
+                System.err.println(jandexCollector.errorClasses);
+                throw new IllegalStateException("Errors in " + currentJar + " " + jandexCollector.errorClasses.size());
+            }
+        }
+
+        @Override
+        public void afterFullScan() throws IOException {
+
+
         }
     }
 
