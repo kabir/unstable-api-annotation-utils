@@ -1,6 +1,9 @@
 package org.wildfly.experimental.api.classpath.index;
 
+import org.wildfly.experimental.api.classpath.runtime.bytecode.ReusableStreams;
+
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -313,6 +316,12 @@ public class ByteRuntimeIndex {
                 return false;
             }
             return Arrays.equals(arr, start, start + length, that.arr, that.start, that.start + that.length);
+        }
+
+        public String convertBytesToString(ReusableStreams reusableStreams) throws IOException {
+            try (DataInputStream in = reusableStreams.getDataInputStream(arr, start, length)) {
+                return in.readUTF();
+            }
         }
     }
 }

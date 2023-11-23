@@ -6,6 +6,7 @@ import org.wildfly.experimental.api.classpath.index.RuntimeIndex;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.JandexCollector;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -61,6 +62,7 @@ public class Benchmark {
         for (int i = 0; i < max; i++) {
             System.out.println("==== Iteration " + i);
             new JarReader(classpath, new NullWorker()).indexJar();
+            new JarReader(classpath, new ConsumeAllBytesWorker()).indexJar();
             new JarReader(classpath, new InspectorWorker(runtimeIndex)).indexJar();
             new JarReader(classpath, new JandexWorker()).indexJar();
             new JarReader(classpath, new JandexCollectorWorker(byteRuntimeIndex)).indexJar();
@@ -77,6 +79,9 @@ public class Benchmark {
         }
 
         void indexJar() throws IOException {
+            System.gc();
+
+
             long start = System.currentTimeMillis();
             worker.beforeFullScan();
             for (Path zipFilePath : paths) {
@@ -103,6 +108,8 @@ public class Benchmark {
             System.out.println("Scanning classpath with " + worker.getClass().getSimpleName() + " lookup took " + (end - start) + "ms");
             System.out.println(classes + " classes found");
             System.out.println();
+
+            System.gc();
         }
     }
 
@@ -129,6 +136,19 @@ public class Benchmark {
     }
 
     private static class NullWorker implements JarReaderWorker {
+    }
+
+    private static class ConsumeAllBytesWorker implements JarReaderWorker {
+        byte[] buf = new byte[2048];
+        @Override
+        public void handleClass(InputStream inputStream) throws IOException {
+
+            BufferedInputStream in = new BufferedInputStream(inputStream);
+            int i = in.read(buf);
+            while (i != -1) {
+                i = in.read(buf);
+            }
+        }
     }
 
     private static class InspectorWorker implements JarReaderWorker {

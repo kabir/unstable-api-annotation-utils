@@ -101,14 +101,14 @@ public class ClassBytecodeInspector {
                 continue;
             }
             switch (info.tag()) {
-                case ConstantPool.CONSTANT_Fieldref:
-                case ConstantPool.CONSTANT_InterfaceMethodref:
-                case ConstantPool.CONSTANT_Methodref: {
+                case BytecodeTags.CONSTANT_FIELDREF:
+                case BytecodeTags.CONSTANT_INTERFACEMETHODREF:
+                case BytecodeTags.CONSTANT_METHODREF: {
                     AbstractRefInfo ref = (AbstractRefInfo)info;
                     String declaringClass = constantPool.className(ref.class_index);
                     NameAndTypeInfo nameAndTypeInfo = (NameAndTypeInfo)constantPool.pool[ref.name_and_type_index];
                     String refName = constantPool.utf8(nameAndTypeInfo.name_index);
-                    if (info.tag() == ConstantPool.CONSTANT_Fieldref) {
+                    if (info.tag() == BytecodeTags.CONSTANT_FIELDREF) {
                         Set<String> annotations = runtimeIndex.getAnnotationsForField(declaringClass, refName);
                         if (annotations != null) {
                             recordFieldUsage(annotations, scannedClass, declaringClass, refName);
@@ -125,7 +125,7 @@ public class ClassBytecodeInspector {
 
                     break;
                 }
-                case ConstantPool.CONSTANT_Class:
+                case BytecodeTags.CONSTANT_CLASS:
                     ClassInfo classInfo = (ClassInfo) info;
                     String otherClass = constantPool.utf8(classInfo.class_index);
                     Set<String> annotations = runtimeIndex.getAnnotationsForClass(otherClass);

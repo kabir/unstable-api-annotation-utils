@@ -16,7 +16,6 @@ import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperim
 import org.wildfly.experimental.api.classpath.runtime.bytecode.JandexCollector;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;

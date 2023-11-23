@@ -12,23 +12,7 @@ import static java.util.Objects.requireNonNull;
  * Copied from biz.aQute.bnd:biz.aQute.bnd.transform:6.4.0 which has an Apache License 2.0
  */
 class ConstantPool {
-    public static final int	CONSTANT_Utf8				= 1;
-    public static final int	CONSTANT_Integer			= 3;
-    public static final int	CONSTANT_Float				= 4;
-    public static final int	CONSTANT_Long				= 5;
-    public static final int	CONSTANT_Double				= 6;
-    public static final int	CONSTANT_Class				= 7;
-    public static final int	CONSTANT_String				= 8;
-    public static final int	CONSTANT_Fieldref			= 9;
-    public static final int	CONSTANT_Methodref			= 10;
-    public static final int	CONSTANT_InterfaceMethodref	= 11;
-    public static final int	CONSTANT_NameAndType		= 12;
-    public static final int	CONSTANT_MethodHandle		= 15;
-    public static final int	CONSTANT_MethodType			= 16;
-    public static final int	CONSTANT_Dynamic			= 17;
-    public static final int	CONSTANT_InvokeDynamic		= 18;
-    public static final int	CONSTANT_Module				= 19;
-    public static final int	CONSTANT_Package			= 20;
+
 
     final Info[]			pool;
 
@@ -53,15 +37,15 @@ class ConstantPool {
         if (entry instanceof Info) {
             return ((Info) entry).tag();
         } else if (entry instanceof String) {
-            return CONSTANT_Utf8;
+            return BytecodeTags.CONSTANT_UTF8;
         } else if (entry instanceof Integer) {
-            return CONSTANT_Integer;
+            return BytecodeTags.CONSTANT_INTEGER;
         } else if (entry instanceof Long) {
-            return CONSTANT_Long;
+            return BytecodeTags.CONSTANT_LONG;
         } else if (entry instanceof Float) {
-            return CONSTANT_Float;
+            return BytecodeTags.CONSTANT_FLOAT;
         } else if (entry instanceof Double) {
-            return CONSTANT_Double;
+            return BytecodeTags.CONSTANT_DOUBLE;
         } else {
             return 0;
         }
@@ -103,19 +87,19 @@ class ConstantPool {
         for (int index = 1; index < constant_pool_count; index++) {
             int tag = in.readUnsignedByte();
             switch (tag) {
-                case CONSTANT_Utf8 : {
+                case BytecodeTags.CONSTANT_UTF8: {
                     pool[index] = readUtf8Info(in);
                     break;
                 }
-                case CONSTANT_Integer : {
+                case BytecodeTags.CONSTANT_INTEGER: {
                     skipInteger(in);
                     break;
                 }
-                case CONSTANT_Float : {
+                case BytecodeTags.CONSTANT_FLOAT: {
                     skipFloat(in);
                     break;
                 }
-                case CONSTANT_Long : {
+                case BytecodeTags.CONSTANT_LONG: {
                     skipLong(in);
                     // For some insane optimization reason, the Long(5) and
                     // Double(6) entries take two slots in the constant pool.
@@ -123,7 +107,7 @@ class ConstantPool {
                     index++;
                     break;
                 }
-                case CONSTANT_Double : {
+                case BytecodeTags.CONSTANT_DOUBLE: {
                     skipDouble(in);
                     // For some insane optimization reason, the Long(5) and
                     // Double(6) entries take two slots in the constant pool.
@@ -131,52 +115,52 @@ class ConstantPool {
                     index++;
                     break;
                 }
-                case CONSTANT_Class : {
+                case BytecodeTags.CONSTANT_CLASS: {
                     pool[index] = ClassInfo.read(in);
                     break;
                 }
-                case CONSTANT_String : {
+                case BytecodeTags.CONSTANT_STRING: {
                     //pool[index] = StringInfo.read(in);
                     in.readUnsignedShort();
                     break;
                 }
-                case CONSTANT_Fieldref : {
+                case BytecodeTags.CONSTANT_FIELDREF: {
                     pool[index] = FieldrefInfo.read(in);
                     break;
                 }
-                case CONSTANT_Methodref : {
+                case BytecodeTags.CONSTANT_METHODREF: {
                     pool[index] = MethodrefInfo.read(in);
                     break;
                 }
-                case CONSTANT_InterfaceMethodref : {
+                case BytecodeTags.CONSTANT_INTERFACEMETHODREF: {
                     pool[index] = InterfaceMethodrefInfo.read(in);
                     break;
                 }
-                case CONSTANT_NameAndType : {
+                case BytecodeTags.CONSTANT_NAMEANDTYPE: {
                     pool[index] = NameAndTypeInfo.read(in);
                     break;
                 }
-                case CONSTANT_MethodHandle : {
+                case BytecodeTags.CONSTANT_METHODHANDLE: {
                     pool[index] = MethodHandleInfo.read(in);
                     break;
                 }
-                case CONSTANT_MethodType : {
+                case BytecodeTags.CONSTANT_METHODTYPE: {
                     pool[index] = MethodTypeInfo.read(in);
                     break;
                 }
-                case CONSTANT_Dynamic : {
+                case BytecodeTags.CONSTANT_DYNAMIC: {
                     pool[index] = DynamicInfo.read(in);
                     break;
                 }
-                case CONSTANT_InvokeDynamic : {
+                case BytecodeTags.CONSTANT_INVOKEDYNAMIC: {
                     pool[index] = InvokeDynamicInfo.read(in);
                     break;
                 }
-                case CONSTANT_Module : {
+                case BytecodeTags.CONSTANT_MODULE: {
                     pool[index] = ModuleInfo.read(in);
                     break;
                 }
-                case CONSTANT_Package : {
+                case BytecodeTags.CONSTANT_PACKAGE: {
                     pool[index] = PackageInfo.read(in);
                     break;
                 }
@@ -232,7 +216,7 @@ class ConstantPool {
 
         @Override
         public int tag() {
-            return CONSTANT_Utf8;
+            return BytecodeTags.CONSTANT_UTF8;
         }
 
         @Override
@@ -256,7 +240,7 @@ class ConstantPool {
 
         @Override
         public int tag() {
-            return CONSTANT_Class;
+            return BytecodeTags.CONSTANT_CLASS;
         }
 
         @Override
@@ -279,7 +263,7 @@ class ConstantPool {
 
         @Override
         public int tag() {
-            return CONSTANT_String;
+            return BytecodeTags.CONSTANT_STRING;
         }
 
         @Override
@@ -320,7 +304,7 @@ class ConstantPool {
 
         @Override
         public int tag() {
-            return CONSTANT_Fieldref;
+            return BytecodeTags.CONSTANT_FIELDREF;
         }
 
         @Override
@@ -340,7 +324,7 @@ class ConstantPool {
 
         @Override
         public int tag() {
-            return CONSTANT_Methodref;
+            return BytecodeTags.CONSTANT_METHODREF;
         }
 
         @Override
@@ -360,7 +344,7 @@ class ConstantPool {
 
         @Override
         public int tag() {
-            return CONSTANT_InterfaceMethodref;
+            return BytecodeTags.CONSTANT_INTERFACEMETHODREF;
         }
 
         @Override
@@ -386,7 +370,7 @@ class ConstantPool {
 
         @Override
         public int tag() {
-            return CONSTANT_NameAndType;
+            return BytecodeTags.CONSTANT_NAMEANDTYPE;
         }
 
         @Override
@@ -421,7 +405,7 @@ class ConstantPool {
 
         @Override
         public int tag() {
-            return CONSTANT_MethodHandle;
+            return BytecodeTags.CONSTANT_METHODHANDLE;
         }
 
         @Override
@@ -444,7 +428,7 @@ class ConstantPool {
 
         @Override
         public int tag() {
-            return CONSTANT_MethodType;
+            return BytecodeTags.CONSTANT_METHODTYPE;
         }
 
         @Override
@@ -487,7 +471,7 @@ class ConstantPool {
 
         @Override
         public int tag() {
-            return CONSTANT_Dynamic;
+            return BytecodeTags.CONSTANT_DYNAMIC;
         }
 
         @Override
@@ -507,7 +491,7 @@ class ConstantPool {
 
         @Override
         public int tag() {
-            return CONSTANT_InvokeDynamic;
+            return BytecodeTags.CONSTANT_INVOKEDYNAMIC;
         }
 
         @Override
@@ -530,7 +514,7 @@ class ConstantPool {
 
         @Override
         public int tag() {
-            return CONSTANT_Module;
+            return BytecodeTags.CONSTANT_MODULE;
         }
 
         @Override
@@ -553,7 +537,7 @@ class ConstantPool {
 
         @Override
         public int tag() {
-            return CONSTANT_Package;
+            return BytecodeTags.CONSTANT_PACKAGE;
         }
 
         @Override

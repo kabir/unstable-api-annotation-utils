@@ -17,22 +17,9 @@ import java.util.Set;
 
 public class JandexCollector implements AdditionalScanInfoHook {
 
-    private static final int CONSTANT_Utf8 = 1;
-    private static final int CONSTANT_Class = 7;
-    private static final int CONSTANT_Fieldref = 9;
-    private static final int CONSTANT_Methodref = 10;
-    private static final int CONSTANT_InterfaceMethodref = 11;
-    private static final int CONSTANT_NameAndType = 12;
-
-    // We might be interested in these?
-    //private static final int CONSTANT_MethodHandle = 15;
-    //private static final int CONSTANT_MethodType = 16;
-    //private static final int CONSTANT_Dynamic = 17;
-    //private static final int CONSTANT_InvokeDynamic = 18;
-
     private final ByteRuntimeIndex runtimeIndex;
 
-    private ClassInformation currentClass;
+    private JandexClassInformation currentClass;
 
     private final Set<AnnotationUsage> usages = new LinkedHashSet<>();
     private final Set<AnnotationUsage> dotNameUsages = new LinkedHashSet<>();
@@ -52,7 +39,7 @@ public class JandexCollector implements AdditionalScanInfoHook {
 
     @Override
     public void startConstantPool(int count) {
-        currentClass = new ClassInformation(count);
+        currentClass = new JandexClassInformation(count);
     }
 
     @Override
@@ -62,12 +49,12 @@ public class JandexCollector implements AdditionalScanInfoHook {
         pos++;
 
         switch (tag) {
-            case CONSTANT_Class:
-            case CONSTANT_Fieldref:
-            case CONSTANT_Methodref:
-            case CONSTANT_InterfaceMethodref:
-            case CONSTANT_NameAndType:
-            case CONSTANT_Utf8:
+            case BytecodeTags.CONSTANT_CLASS:
+            case BytecodeTags.CONSTANT_FIELDREF:
+            case BytecodeTags.CONSTANT_METHODREF:
+            case BytecodeTags.CONSTANT_INTERFACEMETHODREF:
+            case BytecodeTags.CONSTANT_NAMEANDTYPE:
+            case BytecodeTags.CONSTANT_UTF8:
                 currentClass.addConstantPoolEntry(pos, tag, offset, length);
                 break;
             default:
@@ -104,8 +91,8 @@ public class JandexCollector implements AdditionalScanInfoHook {
             for (int pos = 1 ; pos < currentClass.getTags().length ; pos++) {
                 int tag = currentClass.getTags()[pos];
                 switch (tag) {
-                    case CONSTANT_InterfaceMethodref:
-                    case CONSTANT_Methodref: {
+                    case BytecodeTags.CONSTANT_INTERFACEMETHODREF:
+                    case BytecodeTags.CONSTANT_METHODREF: {
                         final int constantPoolPosition = pos;
                         Set<String> annotations = runtimeIndex.getAnnotationsForMethod(
                                 currentClass.getClassNameFromReference(constantPoolPosition),
@@ -119,7 +106,7 @@ public class JandexCollector implements AdditionalScanInfoHook {
                         }
                     }
                     break;
-                    case CONSTANT_Fieldref: {
+                    case BytecodeTags.CONSTANT_FIELDREF: {
                         final int constantPoolPosition = pos;
                         Set<String> annotations = runtimeIndex.getAnnotationsForField(
                                 currentClass.getClassNameFromReference(constantPoolPosition),
@@ -131,7 +118,7 @@ public class JandexCollector implements AdditionalScanInfoHook {
                         }
                     }
                     break;
-                    case CONSTANT_Class: {
+                    case BytecodeTags.CONSTANT_CLASS: {
                         ByteArrayKey key = currentClass.getClassNameFromClassInfo(pos);
                         Set<String> annotations = runtimeIndex.getAnnotationsForClass(key);
                         if (annotations != null) {
@@ -195,46 +182,6 @@ public class JandexCollector implements AdditionalScanInfoHook {
 
     private void recordSuperClassUsage(Set<String> annotations, String superClassName) {
         usages.add(new ExtendsAnnotatedClass(annotations, currentClass.getScannedClassName(), superClassName));
-    }
-
-    private static class ClassInformationOutputter {
-        void output(ClassInformation clInfo) {
-            for (int pos = 1; pos < clInfo.getTags().length; pos++) {
-                if (clInfo.getTags()[pos] == 0) {
-                    outputNotHandledTag(clInfo, pos);
-                    continue;
-                }
-                switch (clInfo.getTags()[pos]) {
-                    case CONSTANT_Methodref:
-                    case CONSTANT_InterfaceMethodref:
-                    case CONSTANT_Fieldref:
-
-                }
-            }
-        }
-
-        void outputNotHandledTag(ClassInformation clInfo, int pos) {
-            System.out.println("#" + pos + "\t" + clInfo.getTags()[pos] + " " + clInfo.getOffsets()[pos] + clInfo.getOffsets()[pos]);
-        }
-
-        void outputRefInfo(ClassInformation clInfo, int pos) {
-            String tagName;
-            switch (clInfo.getTags()[pos]) {
-                case CONSTANT_Methodref:
-                    tagName = "MRef";
-                    break;
-                case CONSTANT_Fieldref:
-                    tagName = "FRef";
-                    break;
-                case CONSTANT_InterfaceMethodref:
-                    tagName = "IRef";
-                    break;
-                default:
-                    tagName = "????";
-            }
-            //System.out.println("#" + pos + "\t" + tagName + clInfo.getClassPositionForReference());
-        }
-
     }
 
 

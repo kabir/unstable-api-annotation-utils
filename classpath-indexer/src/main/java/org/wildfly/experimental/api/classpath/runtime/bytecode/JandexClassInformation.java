@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-class ClassInformation {
+class JandexClassInformation {
     private final int[] tags;
     private final int[] offsets;
     private final int[] lengths;
@@ -27,7 +27,7 @@ class ClassInformation {
     private Type[] interfaceTypes;
 
 
-    ClassInformation(int constantPoolSize) {
+    JandexClassInformation(int constantPoolSize) {
         tags = new int[constantPoolSize + 1];
         offsets = new int[constantPoolSize + 1];
         lengths = new int[constantPoolSize + 1];
@@ -133,7 +133,7 @@ class ClassInformation {
     // This replicates how DataInputStream reads unsigned shorts
     private int readUnsignedShort(int offset) {
         // Stolen from DataInputStream
-        int ch1 = readByteAsUnsignedInt(offset) & 0xff;
+        int ch1 = readByteAsUnsignedInt(offset);
         int ch2 = readByteAsUnsignedInt(offset + 1);
         if ((ch1 | ch2) < 0)
             throw new IllegalStateException();
