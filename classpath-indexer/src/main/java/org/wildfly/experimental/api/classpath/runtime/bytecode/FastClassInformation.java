@@ -86,6 +86,9 @@ public class FastClassInformation {
     }
 
     ByteArrayKey getSuperClass() {
+        if (superClassPosition == 0) {
+            return null;
+        }
         return getClassNameFromClassInfo(superClassPosition);
     }
 

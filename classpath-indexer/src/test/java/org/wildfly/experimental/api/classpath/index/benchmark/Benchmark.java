@@ -4,6 +4,7 @@ import org.jboss.jandex.Indexer;
 import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex;
 import org.wildfly.experimental.api.classpath.index.RuntimeIndex;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.FastClassInfoScanner;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.JandexCollector;
 
 import java.io.BufferedInputStream;
@@ -17,7 +18,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -30,6 +34,7 @@ import java.util.zip.ZipFile;
  * 2) Path to a directory containing an index.txt with the names of the serialized OutputIndex files i.e as bundled in WildFly)
  */
 public class Benchmark {
+
     public static void main(String[] args) throws Exception {
         Path classpathFile = Paths.get(args[0]);
         Path indexDir = Paths.get(args[1]);
@@ -57,23 +62,37 @@ public class Benchmark {
             byteRuntimeIndex = ByteRuntimeIndex.load(list);
         }
 
+        Map<String, List<Long>> runningTimes = new LinkedHashMap<>();
 
-        final int max = 50;
-        for (int i = 0; i < max; i++) {
+        final int iterations = 10;
+        for (int i = 0; i < iterations; i++) {
             System.out.println("==== Iteration " + i);
-            new JarReader(classpath, new NullWorker()).indexJar();
-            new JarReader(classpath, new ConsumeAllBytesWorker()).indexJar();
-            new JarReader(classpath, new InspectorWorker(runtimeIndex)).indexJar();
-            new JarReader(classpath, new JandexWorker()).indexJar();
-            new JarReader(classpath, new JandexCollectorWorker(byteRuntimeIndex)).indexJar();
+            new JarReader(runningTimes, classpath, new NullWorker()).indexJar();
+            new JarReader(runningTimes, classpath, new ConsumeAllBytesWorker()).indexJar();
+            new JarReader(runningTimes, classpath, new InspectorWorker(runtimeIndex)).indexJar();
+            new JarReader(runningTimes, classpath, new JandexWorker()).indexJar();
+            new JarReader(runningTimes, classpath, new JandexCollectorWorker(byteRuntimeIndex)).indexJar();
+            new JarReader(runningTimes, classpath, new FastScannerWorker(byteRuntimeIndex)).indexJar();
+        }
+
+        System.out.println("==== Final Results for " + iterations + " iterations");
+        for (String type : runningTimes.keySet()) {
+            long sum = 0;
+            for (long l : runningTimes.get(type)) {
+                sum += l;
+            }
+            long average = sum / iterations;
+            System.out.println("\t*" + type + " - Average: " + average + "ms, Total: " + sum + "ms " + runningTimes.get(type));
         }
     }
 
     private static class JarReader {
+        private final Map<String, List<Long>> runningTimes;
         private final List<Path> paths;
         private final JarReaderWorker worker;
         int classes;
-        public JarReader(List<Path> paths, JarReaderWorker worker) {
+        public JarReader(Map<String, List<Long>> runningTimes, List<Path> paths, JarReaderWorker worker) {
+            this.runningTimes = runningTimes;
             this.paths = paths;
             this.worker = worker;
         }
@@ -81,7 +100,7 @@ public class Benchmark {
         void indexJar() throws IOException {
             System.gc();
 
-
+            System.out.println("Scanning classpath with " + worker.getClass().getSimpleName());
             long start = System.currentTimeMillis();
             worker.beforeFullScan();
             for (Path zipFilePath : paths) {
@@ -95,7 +114,7 @@ public class Benchmark {
                             if (entry.getName().endsWith(".class")) {
                                 try (InputStream inputStream = zipFile.getInputStream(entry)) {
                                     classes++;
-                                    worker.handleClass(inputStream);
+                                    worker.handleClass(zipFilePath, entry.getName(), inputStream);
                                 }
                             }
                         }
@@ -104,10 +123,12 @@ public class Benchmark {
                 worker.afterJar();
             }
             worker.afterFullScan();
-            long end = System.currentTimeMillis();
-            System.out.println("Scanning classpath with " + worker.getClass().getSimpleName() + " lookup took " + (end - start) + "ms");
+            long time = System.currentTimeMillis() - start;
+            System.out.println("Lookup took " + time + "ms");
             System.out.println(classes + " classes found");
             System.out.println();
+            List<Long> list = runningTimes.computeIfAbsent(worker.getClass().getSimpleName(), k -> new ArrayList<>());
+            list.add(time);
 
             System.gc();
         }
@@ -122,7 +143,7 @@ public class Benchmark {
 
         }
 
-        default void handleClass(InputStream inputStream) throws IOException {
+        default void handleClass(Path zipFilePath, String classFileName, InputStream inputStream) throws IOException {
 
         }
 
@@ -141,7 +162,7 @@ public class Benchmark {
     private static class ConsumeAllBytesWorker implements JarReaderWorker {
         byte[] buf = new byte[2048];
         @Override
-        public void handleClass(InputStream inputStream) throws IOException {
+        public void handleClass(Path zipFilePath, String classFileName, InputStream inputStream) throws IOException {
 
             BufferedInputStream in = new BufferedInputStream(inputStream);
             int i = in.read(buf);
@@ -159,7 +180,7 @@ public class Benchmark {
         }
 
         @Override
-        public void handleClass(InputStream inputStream) throws IOException {
+        public void handleClass(Path zipFilePath, String classFileName, InputStream inputStream) throws IOException {
             inspector.scanClassFile(inputStream);
         }
     }
@@ -172,7 +193,7 @@ public class Benchmark {
         }
 
         @Override
-        public void handleClass(InputStream inputStream) throws IOException {
+        public void handleClass(Path zipFilePath, String classFileName, InputStream inputStream) throws IOException {
             indexer.index(inputStream);
         }
 
@@ -202,7 +223,7 @@ public class Benchmark {
         }
 
         @Override
-        public void handleClass(InputStream inputStream) throws IOException {
+        public void handleClass(Path zipFilePath, String classFileName, InputStream inputStream) throws IOException {
             indexer.index(inputStream);
         }
 
@@ -221,5 +242,47 @@ public class Benchmark {
 
         }
     }
+    private static class FastScannerWorker implements JarReaderWorker {
+        private final ByteRuntimeIndex runtimeIndex;
+        private FastClassInfoScanner scanner;
+
+        Path currentJar;
+
+        int failures;
+
+        private FastScannerWorker(ByteRuntimeIndex runtimeIndex) {
+            this.runtimeIndex = runtimeIndex;
+            scanner = new FastClassInfoScanner(runtimeIndex);
+        }
+
+        @Override
+        public void beforeJar(Path zipFilePath) throws IOException {
+            currentJar = zipFilePath;
+        }
+
+        @Override
+        public void handleClass(Path zipFilePath, String classFileName, InputStream inputStream) throws IOException {
+            try {
+                //System.out.println("---> " + zipFilePath + " " + classFileName);
+                scanner.scanClass(inputStream);
+            } catch (RuntimeException e) {
+                //System.out.println("Error");
+                //System.exit(1);
+                failures++;
+            }
+
+        }
+
+        @Override
+        public void afterJar() throws IOException {
+        }
+
+        @Override
+        public void afterFullScan() throws IOException {
+            System.out.println("Failures:"  + failures);
+        }
+    }
+
+
 
 }

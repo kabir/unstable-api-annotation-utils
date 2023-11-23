@@ -18,10 +18,23 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 public class ByteRuntimeIndex {
-
-
     public static final String BYTECODE_CONSTRUCTOR_NAME = "<init>";
+
+    private static final byte[] OBJECT_BYTES = new byte[] {
+            // Length = 16
+            0, 16,
+            // j     a     v     o     /
+            0x6a, 0x61, 0x76, 0x61, 0x2f,
+            // l     a     n     g     /
+            0x6c, 0x61, 0x6e, 0x67, 0x2f,
+            // O     b     j     e     c     t
+            0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74
+    };
+
+    public static final ByteArrayKey JAVA_LANG_OBJECT_KEY = ByteArrayKey.create(OBJECT_BYTES, 0, OBJECT_BYTES.length);
+
     private static final ByteArrayOutputStream BYTE_ARRAY_OUTPUT_STREAM = new ByteArrayOutputStream(2048);
+
 
     public static final ByteArrayKey BYTECODE_CONSTRUCTOR_KEY;
     static {

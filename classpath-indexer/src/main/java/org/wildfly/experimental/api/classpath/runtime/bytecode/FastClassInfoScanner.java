@@ -42,8 +42,8 @@ public class FastClassInfoScanner {
         int[] tags = null;
         try {
             constPool = tmpObjects.borrowConstantPool(size);
-            offsets = tmpObjects.borrowConstantPoolOffsets(size);
-            tags = tmpObjects.borrowConstantPoolTags(size);
+            offsets = new int[size];
+            tags = new int[size];
             int lastOffset = 0;
             for (int pos = 0, offset = 0; pos < size; pos++) {
                 int tag = readUnsignedByte(in);
@@ -122,12 +122,6 @@ public class FastClassInfoScanner {
         } finally {
             if (constPool != null) {
                 tmpObjects.returnConstantPool(constPool);
-            }
-            if (offsets != null) {
-                tmpObjects.returnConstantPoolOffsets(offsets);
-            }
-            if (tags != null) {
-                tmpObjects.returnConstantPoolTags(tags);
             }
         }
     }
@@ -229,18 +223,6 @@ public class FastClassInfoScanner {
         //private Utils.ReusableBufferedDataInputStream dataInputStream;
 
         private byte[] constantPool;
-        private int[] constantPoolOffsets;
-        private int[] constantPoolTags;
-
-//        DataInputStream dataInputStreamOf(InputStream inputStream) {
-//            Utils.ReusableBufferedDataInputStream stream = dataInputStream;
-//            if (stream == null) {
-//                stream = new Utils.ReusableBufferedDataInputStream();
-//                this.dataInputStream = stream;
-//            }
-//            stream.setInputStream(inputStream);
-//            return stream;
-//        }
 
         byte[] borrowConstantPool(int poolSize) {
             byte[] buf = this.constantPool;
@@ -255,36 +237,6 @@ public class FastClassInfoScanner {
 
         void returnConstantPool(byte[] buf) {
             this.constantPool = buf;
-        }
-
-        int[] borrowConstantPoolOffsets(int poolSize) {
-            int[] buf = this.constantPoolOffsets;
-            if (buf == null || buf.length < poolSize) {
-                buf = new int[poolSize];
-            } else {
-                Arrays.fill(buf, 0, poolSize, 0);
-            }
-            this.constantPoolOffsets = null;
-            return buf;
-        }
-
-        void returnConstantPoolOffsets(int[] offsets) {
-            this.constantPoolOffsets = offsets;
-        }
-
-        int[] borrowConstantPoolTags(int poolSize) {
-            int[] buf = this.constantPoolTags;
-            if (buf == null || buf.length < poolSize) {
-                buf = new int[poolSize];
-            } else {
-                Arrays.fill(buf, 0, poolSize, 0);
-            }
-            this.constantPoolTags = null;
-            return buf;
-        }
-
-        void returnConstantPoolTags(int[] offsets) {
-            this.constantPoolTags = offsets;
         }
     }
 

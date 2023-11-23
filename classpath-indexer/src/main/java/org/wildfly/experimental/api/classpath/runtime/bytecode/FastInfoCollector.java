@@ -10,6 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.JAVA_LANG_OBJECT_KEY;
 import static org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.convertClassNameToDotFormat;
 
 class FastInfoCollector {
@@ -79,7 +80,7 @@ class FastInfoCollector {
 
         // Now check the superclass and interfaces
         ByteArrayKey superClass = classInfo.getSuperClass();
-        if (superClass != null /*&& classInfo.getSuperClassType() != ClassType.OBJECT_TYPE*/) {
+        if (superClass != null && !JAVA_LANG_OBJECT_KEY.equals(superClass)) {
 
             Set<String> annotations = runtimeIndex.getAnnotationsForClass(superClass);
             if (annotations != null) {
