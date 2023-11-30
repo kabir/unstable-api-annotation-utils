@@ -9,13 +9,15 @@ import org.wildfly.experimental.api.classpath.index.classes.AnnotationWithExperi
 import org.wildfly.experimental.api.classpath.index.classes.Experimental;
 import org.wildfly.experimental.api.classpath.index.classes.usage.NoUsage;
 import org.wildfly.experimental.api.classpath.index.classes.usage.annotation.AnnotatedClass;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotatedAnnotation;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsage;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassInfoScanner;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.JandexIndex;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -29,7 +31,7 @@ import static org.wildfly.experimental.api.classpath.runtime.bytecode.Annotation
  */
 public class RuntimeJandexTestCase {
     private static final String EXPERIMENTAL_ANNOTATION = Experimental.class.getName();
-    RuntimeIndex runtimeIndex;
+    ByteRuntimeIndex runtimeIndex;
     @Before
     public void createRuntimeIndex() throws IOException {
         OverallIndex overallIndex = new OverallIndex();
@@ -40,15 +42,15 @@ public class RuntimeJandexTestCase {
         Path p = Paths.get("target/index/runtime-test");
         overallIndex.save(p);
 
-        runtimeIndex = RuntimeIndex.load(p);
+        runtimeIndex = ByteRuntimeIndex.load(p);
     }
 
     @Test
     public void testNoUsage() throws Exception {
-        ClassBytecodeInspector inspector = new ClassBytecodeInspector(runtimeIndex);
-        boolean ok = checkJandex(inspector, NoUsage.class);
+        ClassInfoScanner scanner = new ClassInfoScanner(runtimeIndex);
+        boolean ok = checkJandex(scanner, NoUsage.class);
         Assert.assertTrue(ok);
-        Assert.assertEquals(0, inspector.getUsages().size());
+        Assert.assertEquals(0, scanner.getUsages().size());
     }
 
     @Test
@@ -62,19 +64,26 @@ public class RuntimeJandexTestCase {
         return RuntimeIndex.convertClassNameToVmFormat(clazz.getName());
     }
 
-    private AnnotatedAnnotation checkJandexAndGetSingleAnnotationUsage(
+    AnnotatedAnnotation checkJandexAndGetSingleAnnotationUsage(
             Class<?> clazz) throws IOException {
-        ClassBytecodeInspector inspector = new ClassBytecodeInspector(runtimeIndex);
-        boolean ok = checkJandex(inspector, clazz);
-        Assert.assertFalse(ok);
-        Assert.assertEquals(1, inspector.getUsages().size());
-        AnnotationUsage usage = inspector.getUsages().iterator().next();
+        ClassInfoScanner scanner = new ClassInfoScanner(runtimeIndex);
+        scanClass(scanner, clazz);
+        checkJandex(scanner, clazz);
+        Assert.assertEquals(1, scanner.getUsages().size());
+        AnnotationUsage usage = scanner.getUsages().iterator().next();
         Assert.assertEquals(ANNOTATION_USAGE, usage.getType());
         return usage.asAnnotatedAnnotation();
     }
 
+    private void scanClass(ClassInfoScanner scanner, Class<?> clazz) throws IOException {
+        String classLocation = clazz.getName().replaceAll("\\.", "/") + ".class";
+        URL url = ClassInfoScannerTestCase.class.getClassLoader().getResource(classLocation);
+        try (InputStream in = url.openStream()) {
+            scanner.scanClass(in);
+        }
+    }
 
-    private boolean checkJandex(ClassBytecodeInspector inspector, Class<?> clazz) throws IOException {
+    private boolean checkJandex(ClassInfoScanner inspector, Class<?> clazz) throws IOException {
         Index index = Index.of(clazz);
         return inspector.checkAnnotationIndex(new JandexIndex() {
             @Override
@@ -83,4 +92,6 @@ public class RuntimeJandexTestCase {
             }
         });
     }
+
+
 }

@@ -10,16 +10,16 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
 
-public class FastClassInfoScanner {
+public class ClassInfoScanner {
 
     // Constant Pool constants
 
 
-    private final FastInfoCollector collector;
+    private final ClassInfoCollector collector;
     private final TmpObjects tmpObjects = new TmpObjects();
 
-    public FastClassInfoScanner(ByteRuntimeIndex runtimeIndex) {
-        this.collector = new FastInfoCollector(runtimeIndex);
+    public ClassInfoScanner(ByteRuntimeIndex runtimeIndex) {
+        this.collector = new ClassInfoCollector(runtimeIndex);
     }
 
     public Set<AnnotationUsage> getUsages() {
@@ -115,8 +115,8 @@ public class FastClassInfoScanner {
                 interfacePositions[i] = readUnsignedShort(in);
             }
 
-            FastClassInformation classInfo =
-                    new FastClassInformation(tags, constPool, offsets, thisClassPosition, superClassPosition, interfacePositions, lastOffset);
+            ClassInformation classInfo =
+                    new ClassInformation(tags, constPool, offsets, thisClassPosition, superClassPosition, interfacePositions, lastOffset);
             collector.processClass(classInfo);
 
         } finally {
@@ -124,6 +124,10 @@ public class FastClassInfoScanner {
                 tmpObjects.returnConstantPool(constPool);
             }
         }
+    }
+
+    public boolean checkAnnotationIndex(JandexIndex annotationIndex) {
+        return collector.checkAnnotationIndex(annotationIndex);
     }
 
     private void verifyMagic(InputStream in) throws IOException {

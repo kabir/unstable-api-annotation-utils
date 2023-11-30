@@ -31,13 +31,13 @@ import org.wildfly.experimental.api.classpath.index.classes.usage.MethodReferenc
 import org.wildfly.experimental.api.classpath.index.classes.usage.NoUsage;
 import org.wildfly.experimental.api.classpath.index.classes.usage.StaticFieldReference;
 import org.wildfly.experimental.api.classpath.index.classes.usage.StaticMethodReference;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotatedClassUsage;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotatedFieldReference;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotatedMethodReference;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsage;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ExtendsAnnotatedClass;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassInfoScanner;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ImplementsAnnotatedInterface;
 
 import java.io.File;
@@ -56,12 +56,11 @@ import static org.wildfly.experimental.api.classpath.runtime.bytecode.Annotation
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.IMPLEMENTS_INTERFACE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.METHOD_REFERENCE;
 
-/**
- * Tests non-annotation usage of references annotated with experimental annotations
- */
-public class RuntimeReferenceTestCase {
+public class ClassInfoScannerTestCase {
     private static final String EXPERIMENTAL_ANNOTATION = Experimental.class.getName();
-    RuntimeIndex runtimeIndex;
+
+    ByteRuntimeIndex runtimeIndex;
+
     @Before
     public void createRuntimeIndex() throws IOException {
         OverallIndex overallIndex = new OverallIndex();
@@ -79,15 +78,14 @@ public class RuntimeReferenceTestCase {
         Path p = Paths.get("target/index/runtime-test");
         overallIndex.save(p);
 
-        runtimeIndex = RuntimeIndex.load(p);
+        runtimeIndex = ByteRuntimeIndex.load(p);
     }
 
     @Test
     public void testNoUsage() throws Exception {
-        ClassBytecodeInspector inspector = new ClassBytecodeInspector(runtimeIndex);
-        boolean ok = scanClass(inspector, NoUsage.class);
-        Assert.assertTrue(ok);
-        Assert.assertEquals(0, inspector.getUsages().size());
+        ClassInfoScanner scanner = new ClassInfoScanner(runtimeIndex);
+        scanClass(scanner, NoUsage.class);
+        Assert.assertEquals(0, scanner.getUsages().size());
     }
 
     @Test
@@ -120,7 +118,7 @@ public class RuntimeReferenceTestCase {
 
         Assert.assertEquals(ConstructorReference.class.getName(), usage.getSourceClass());
         Assert.assertEquals(ClassWithExperimentalConstructors.class.getName(), usage.getMethodClass());
-        Assert.assertEquals(ClassBytecodeInspector.BYTECODE_CONSTRUCTOR_NAME, usage.getMethodName());
+        Assert.assertEquals(RuntimeIndex.BYTECODE_CONSTRUCTOR_NAME, usage.getMethodName());
         Assert.assertEquals("(Ljava/lang/String;)V", usage.getDescriptor());
         Assert.assertEquals(Collections.singleton(Experimental.class.getName()), usage.getAnnotations());
     }
@@ -267,11 +265,11 @@ public class RuntimeReferenceTestCase {
 
     @Test
     public void testClassUsageAndMethodReference() throws Exception {
-        ClassBytecodeInspector inspector = new ClassBytecodeInspector(runtimeIndex);
-        Assert.assertFalse(scanClass(inspector, ClassUsageAndMethodReference.class));
-        Assert.assertEquals(2, inspector.getUsages().size());
+        ClassInfoScanner scanner = new ClassInfoScanner(runtimeIndex);
+        scanClass(scanner, ClassUsageAndMethodReference.class);
+        Assert.assertEquals(2, scanner.getUsages().size());
         Map<AnnotationUsageType, AnnotationUsage> usages = new HashMap<>();
-        for (AnnotationUsage usage : inspector.getUsages()) {
+        for (AnnotationUsage usage : scanner.getUsages()) {
             if (usage.getType() == CLASS_USAGE) {
                 usages.put(CLASS_USAGE, usage);
             } else if (usage.getType() == METHOD_REFERENCE) {
@@ -297,20 +295,21 @@ public class RuntimeReferenceTestCase {
     AnnotationUsage scanAndGetSingleAnnotationUsage(
             Class<?> clazz,
             AnnotationUsageType type) throws IOException {
-        ClassBytecodeInspector inspector = new ClassBytecodeInspector(runtimeIndex);
-        boolean ok = scanClass(inspector, clazz);
-        Assert.assertFalse(ok);
-        Assert.assertEquals(1, inspector.getUsages().size());
-        AnnotationUsage usage = inspector.getUsages().iterator().next();
+        ClassInfoScanner scanner = new ClassInfoScanner(runtimeIndex);
+        scanClass(scanner, clazz);
+
+        Assert.assertEquals(1, scanner.getUsages().size());
+        AnnotationUsage usage = scanner.getUsages().iterator().next();
         Assert.assertEquals(type, usage.getType());
         return usage;
     }
 
-    private boolean scanClass(ClassBytecodeInspector inspector, Class<?> clazz) throws IOException {
+    private void scanClass(ClassInfoScanner scanner, Class<?> clazz) throws IOException {
         String classLocation = clazz.getName().replaceAll("\\.", "/") + ".class";
-        URL url = RuntimeReferenceTestCase.class.getClassLoader().getResource(classLocation);
+        URL url = ClassInfoScannerTestCase.class.getClassLoader().getResource(classLocation);
         try (InputStream in = url.openStream()) {
-            return inspector.scanClassFile(in);
+            scanner.scanClass(in);
         }
     }
+
 }

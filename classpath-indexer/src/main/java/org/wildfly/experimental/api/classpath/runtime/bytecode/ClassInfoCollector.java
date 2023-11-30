@@ -1,9 +1,11 @@
 package org.wildfly.experimental.api.classpath.runtime.bytecode;
 
+import org.jboss.jandex.AnnotationInstance;
 import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex;
 import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.ByteArrayKey;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -13,14 +15,14 @@ import java.util.Set;
 import static org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.JAVA_LANG_OBJECT_KEY;
 import static org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.convertClassNameToDotFormat;
 
-class FastInfoCollector {
+class ClassInfoCollector {
     private final ByteRuntimeIndex runtimeIndex;
 
     private final ReusableStreams reusableStreams = new ReusableStreams();
 
     private final Set<AnnotationUsage> usages = new LinkedHashSet<>();
 
-    FastInfoCollector(ByteRuntimeIndex runtimeIndex) {
+    ClassInfoCollector(ByteRuntimeIndex runtimeIndex) {
         this.runtimeIndex = runtimeIndex;
     }
 
@@ -28,7 +30,7 @@ class FastInfoCollector {
         return usages;
     }
 
-    public void processClass(FastClassInformation classInfo) throws IOException {
+    public void processClass(ClassInformation classInfo) throws IOException {
         ClassReferences classReferences = new ClassReferences();
         int[] tags = classInfo.getTags();
         for (int i = 0; i < tags.length; i++) {
@@ -104,7 +106,26 @@ class FastInfoCollector {
         classReferences.recordClassUsage(classInfo.getScannedClassName(reusableStreams));
     }
 
-    private void recordMethodUsage(FastClassInformation classInfo, Set<String> annotations, ByteArrayKey classNameFromReference, ByteArrayKey nameFromReference, ByteArrayKey descriptorFromReference) throws IOException {
+    public boolean checkAnnotationIndex(JandexIndex annotationIndex) {
+        boolean noAnnotationUsage = true;
+        Set<String> annotations = new HashSet<>();
+        for (String annotation : runtimeIndex.getAnnotatedAnnotations()) {
+            Collection<AnnotationInstance> annotationInstances =  annotationIndex.getAnnotations(annotation);
+            if (!annotationInstances.isEmpty()) {
+                // TODO it would be good to record WHERE the annotations are referenced from. At least the class where it happens.
+                // But I am not sure about what some of the 'Kind's returned by AnnotationInstance.target().kind are at the moment.
+                // The ones I am unsure about are Kind.TYPE and Kind.RECORD_COMPONENT
+                annotations.add(annotation);
+                noAnnotationUsage = false;
+            }
+        }
+        if (annotations.size() > 0) {
+            usages.add(new AnnotatedAnnotation(annotations));
+        }
+        return noAnnotationUsage;
+    }
+
+    private void recordMethodUsage(ClassInformation classInfo, Set<String> annotations, ByteArrayKey classNameFromReference, ByteArrayKey nameFromReference, ByteArrayKey descriptorFromReference) throws IOException {
         //The name of the scanned class will not be in the index, so we need to get that separately
         String scannedClass = classInfo.getScannedClassName(reusableStreams);
 
@@ -117,7 +138,7 @@ class FastInfoCollector {
         usages.add(annotatedMethodReference);
     }
 
-    private void recordFieldUsage(FastClassInformation classInfo, Set<String> annotations, ByteArrayKey classNameFromReference, ByteArrayKey nameFromReference) throws IOException {
+    private void recordFieldUsage(ClassInformation classInfo, Set<String> annotations, ByteArrayKey classNameFromReference, ByteArrayKey nameFromReference) throws IOException {
         //The name of the scanned class will not be in the index, so we need to get that separately
         String scannedClass = classInfo.getScannedClassName(reusableStreams);
 
@@ -129,13 +150,13 @@ class FastInfoCollector {
         usages.add(annotatedFieldReference);
     }
 
-    private void recordImplementsInterfaceUsage(FastClassInformation classInfo, Set<String> annotations, String ifaceName) throws IOException {
+    private void recordImplementsInterfaceUsage(ClassInformation classInfo, Set<String> annotations, String ifaceName) throws IOException {
         //The name of the scanned class will not be in the index, so we need to get that separately
         String scannedClass = classInfo.getScannedClassName(reusableStreams);
         usages.add(new ImplementsAnnotatedInterface(annotations, scannedClass, ifaceName));
     }
 
-    private void recordSuperClassUsage(FastClassInformation classInfo, Set<String> annotations, String superClassName) throws IOException {
+    private void recordSuperClassUsage(ClassInformation classInfo, Set<String> annotations, String superClassName) throws IOException {
         //The name of the scanned class will not be in the index, so we need to get that separately
         String scannedClass = classInfo.getScannedClassName(reusableStreams);
         usages.add(new ExtendsAnnotatedClass(annotations, scannedClass, superClassName));

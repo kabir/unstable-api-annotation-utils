@@ -3,9 +3,7 @@ package org.wildfly.experimental.api.classpath.index.benchmark;
 import org.jboss.jandex.Indexer;
 import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex;
 import org.wildfly.experimental.api.classpath.index.RuntimeIndex;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassBytecodeInspector;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.FastClassInfoScanner;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.JandexCollector;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassInfoScanner;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -18,7 +16,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,9 +66,7 @@ public class Benchmark {
             System.out.println("==== Iteration " + i);
             new JarReader(runningTimes, classpath, new NullWorker()).indexJar();
             new JarReader(runningTimes, classpath, new ConsumeAllBytesWorker()).indexJar();
-            new JarReader(runningTimes, classpath, new InspectorWorker(runtimeIndex)).indexJar();
             new JarReader(runningTimes, classpath, new JandexWorker()).indexJar();
-            new JarReader(runningTimes, classpath, new JandexCollectorWorker(byteRuntimeIndex)).indexJar();
             new JarReader(runningTimes, classpath, new FastScannerWorker(byteRuntimeIndex)).indexJar();
         }
 
@@ -172,19 +167,6 @@ public class Benchmark {
         }
     }
 
-    private static class InspectorWorker implements JarReaderWorker {
-        private final ClassBytecodeInspector inspector;
-
-        public InspectorWorker(RuntimeIndex runtimeIndex) {
-            this.inspector = new ClassBytecodeInspector(runtimeIndex);
-        }
-
-        @Override
-        public void handleClass(Path zipFilePath, String classFileName, InputStream inputStream) throws IOException {
-            inspector.scanClassFile(inputStream);
-        }
-    }
-
     private static class JandexWorker implements JarReaderWorker {
         private Indexer indexer;
         @Override
@@ -203,48 +185,9 @@ public class Benchmark {
         }
     }
 
-
-    private static class JandexCollectorWorker implements JarReaderWorker {
-        private final ByteRuntimeIndex runtimeIndex;
-        private Indexer indexer;
-        private JandexCollector jandexCollector;
-
-        Path currentJar;
-
-        private JandexCollectorWorker(ByteRuntimeIndex runtimeIndex) {
-            this.runtimeIndex = runtimeIndex;
-            jandexCollector = new JandexCollector(runtimeIndex);
-        }
-
-        @Override
-        public void beforeJar(Path zipFilePath) throws IOException {
-            currentJar = zipFilePath;
-            indexer = new Indexer(jandexCollector);
-        }
-
-        @Override
-        public void handleClass(Path zipFilePath, String classFileName, InputStream inputStream) throws IOException {
-            indexer.index(inputStream);
-        }
-
-        @Override
-        public void afterJar() throws IOException {
-            indexer.complete();
-            if (!jandexCollector.errorClasses.isEmpty()) {
-                System.err.println(jandexCollector.errorClasses);
-                throw new IllegalStateException("Errors in " + currentJar + " " + jandexCollector.errorClasses.size());
-            }
-        }
-
-        @Override
-        public void afterFullScan() throws IOException {
-
-
-        }
-    }
     private static class FastScannerWorker implements JarReaderWorker {
         private final ByteRuntimeIndex runtimeIndex;
-        private FastClassInfoScanner scanner;
+        private ClassInfoScanner scanner;
 
         Path currentJar;
 
@@ -252,7 +195,7 @@ public class Benchmark {
 
         private FastScannerWorker(ByteRuntimeIndex runtimeIndex) {
             this.runtimeIndex = runtimeIndex;
-            scanner = new FastClassInfoScanner(runtimeIndex);
+            scanner = new ClassInfoScanner(runtimeIndex);
         }
 
         @Override

@@ -7,7 +7,7 @@ import java.io.IOException;
 
 import static org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.convertClassNameToDotFormat;
 
-public class FastClassInformation {
+public class ClassInformation {
 
     private static final ByteArrayKey[] EMPTY_BYTE_ARRAY_KEY_ARRAY = new ByteArrayKey[0];
 
@@ -25,7 +25,7 @@ public class FastClassInformation {
     private String scannedClassName;
 
 
-    FastClassInformation(int[] tags, byte[] constPoolBytes, int[] offsets, int thisClassPosition, int superClassPosition, int[] interfacePositions, int constantPoolSize) {
+    ClassInformation(int[] tags, byte[] constPoolBytes, int[] offsets, int thisClassPosition, int superClassPosition, int[] interfacePositions, int constantPoolSize) {
         this.tags = tags;
         this.constPoolBytes = constPoolBytes;
         this.offsets = offsets;
