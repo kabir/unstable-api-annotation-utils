@@ -113,16 +113,7 @@ class ClassInfoCollector {
     }
 
     public boolean checkAnnotationIndex(JandexIndex annotationIndex) {
-        Map<AnnotationTarget, Set<String>> annotationsByTarget = new HashMap<>();
-        for (String annotation : runtimeIndex.getAnnotatedAnnotations()) {
-            Collection<AnnotationInstance> annotationInstances = annotationIndex.getAnnotations(annotation);
-            for (AnnotationInstance instance : annotationInstances) {
-                AnnotationTarget target = instance.target();
-                addAnnotationTarget(annotationsByTarget, annotation, target);
-            }
-        }
-        processAnnotationTargets(annotationsByTarget);
-        return annotationsByTarget.isEmpty();
+        return new AnnotationIndexChecker(annotationIndex).checkAnnotationIndex();
     }
 
     private void addAnnotationTarget(Map<AnnotationTarget, Set<String>> annotationsByTarget, String annotation, AnnotationTarget target) {
@@ -236,6 +227,82 @@ class ClassInfoCollector {
                 empty = false;
             }
             return empty;
+        }
+    }
+
+    private class AnnotationIndexChecker {
+        private final JandexIndex annotationIndex;
+
+        public AnnotationIndexChecker(JandexIndex annotationIndex) {
+            this.annotationIndex = annotationIndex;
+        }
+
+        public boolean checkAnnotationIndex() {
+            Map<AnnotationTarget, Set<String>> annotationsByTarget = new HashMap<>();
+            for (String annotation : runtimeIndex.getAnnotatedAnnotations()) {
+                Collection<AnnotationInstance> annotationInstances = annotationIndex.getAnnotations(annotation);
+                for (AnnotationInstance instance : annotationInstances) {
+                    AnnotationTarget target = instance.target();
+                    addAnnotationTarget(annotationsByTarget, annotation, target);
+                }
+            }
+            processAnnotationTargets(annotationsByTarget);
+            return annotationsByTarget.isEmpty();
+        }
+
+        private void addAnnotationTarget(Map<AnnotationTarget, Set<String>> annotationsByTarget, String annotation, AnnotationTarget target) {
+            if (target.kind() == AnnotationTarget.Kind.TYPE) {
+                addAnnotationTarget(annotationsByTarget, annotation, target.asType().enclosingTarget());
+                return;
+            }
+            if (target.kind() == AnnotationTarget.Kind.METHOD_PARAMETER) {
+                MethodParameterInfo minfo = target.asMethodParameter();
+                target = minfo.method();
+
+            }
+            Set<String> annotations = annotationsByTarget.computeIfAbsent(target, k -> new HashSet<>());
+            annotations.add(annotation);
+        }
+
+        private boolean processAnnotationTargets(Map<AnnotationTarget, Set<String>> annotationsByTarget) {
+            Set<AnnotationUsage> annotationUsages = new HashSet<>();
+            for (AnnotationTarget target : annotationsByTarget.keySet()) {
+                Set<String> annotations = annotationsByTarget.get(target);
+                AnnotationTarget.Kind kind = target.kind();
+                if (kind == AnnotationTarget.Kind.CLASS) {
+                    ClassInfo classInfo = target.asClass();
+                    annotationUsages.add(new AnnotationOnUserClassUsage(classInfo.name().toString(), annotations));
+
+                } else if (kind == AnnotationTarget.Kind.FIELD) {
+                    FieldInfo fieldInfo = target.asField();
+                    String className = fieldInfo.declaringClass().name().toString();
+                    String fieldName = fieldInfo.name();
+                    annotationUsages.add(new AnnotationOnUserFieldUsage(className, fieldName, annotations));
+                } else if (kind == AnnotationTarget.Kind.METHOD) {
+                    MethodInfo methodInfo;
+                    if (kind == AnnotationTarget.Kind.METHOD_PARAMETER) {
+                        MethodParameterInfo pinfo = target.asMethodParameter();
+                        methodInfo = pinfo.method();
+                    } else {
+                        methodInfo = target.asMethod();
+                    }
+                    String className = methodInfo.declaringClass().name().toString();
+                    String methodName = methodInfo.name();
+                    String desc = methodInfo.descriptor();
+                    annotationUsages.add(new AnnotationOnUserMethodUsage(className, methodName, desc, annotations));
+                } else if (kind == AnnotationTarget.Kind.TYPE) {
+                    // This should not happen. We are getting the enclosing target for this case in addAnnotationTarget
+                    throw new IllegalStateException();
+                } else if (kind == AnnotationTarget.Kind.METHOD_PARAMETER) {
+                    // This should not happen. We are getting the method containing the method in addAnnotationTarget
+                } else if (kind == AnnotationTarget.Kind.RECORD_COMPONENT) {
+                    // TODO
+                    RecordComponentInfo info = target.asRecordComponent();
+                    info.name();
+                }
+            }
+            ClassInfoCollector.this.usages.addAll(annotationUsages);
+            return annotationUsages.isEmpty();
         }
     }
 
