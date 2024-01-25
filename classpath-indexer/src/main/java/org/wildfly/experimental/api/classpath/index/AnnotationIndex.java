@@ -11,6 +11,9 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+/**
+ * Contains the index of locations in the classpath where an annotation has been found.
+ */
 public class AnnotationIndex {
 
     private static final String START_MARKER = "==";

@@ -3,6 +3,10 @@ package org.wildfly.experimental.api.classpath.index;
 import java.io.PrintWriter;
 import java.util.Objects;
 
+/**
+ * Internal use in the index. Contains information about a field annotated with one of the annotations
+ * are searching for.
+ */
 class AnnotatedField {
     private final String className;
 

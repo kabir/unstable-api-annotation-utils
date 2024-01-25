@@ -3,6 +3,10 @@ package org.wildfly.experimental.api.classpath.index;
 import java.io.PrintWriter;
 import java.util.Objects;
 
+/**
+ * Internal use in the index. Contains information about a method annotated with one of the annotations
+ * are searching for.
+ */
 class AnnotatedMethod {
     private final String className;
     private final String methodName;

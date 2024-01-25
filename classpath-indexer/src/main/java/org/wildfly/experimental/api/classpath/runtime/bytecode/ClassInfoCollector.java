@@ -1,6 +1,12 @@
 package org.wildfly.experimental.api.classpath.runtime.bytecode;
 
 import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationTarget;
+import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.FieldInfo;
+import org.jboss.jandex.MethodInfo;
+import org.jboss.jandex.MethodParameterInfo;
+import org.jboss.jandex.RecordComponentInfo;
 import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex;
 import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.ByteArrayKey;
 
@@ -107,22 +113,71 @@ class ClassInfoCollector {
     }
 
     public boolean checkAnnotationIndex(JandexIndex annotationIndex) {
-        boolean noAnnotationUsage = true;
-        Set<String> annotations = new HashSet<>();
+        Map<AnnotationTarget, Set<String>> annotationsByTarget = new HashMap<>();
         for (String annotation : runtimeIndex.getAnnotatedAnnotations()) {
-            Collection<AnnotationInstance> annotationInstances =  annotationIndex.getAnnotations(annotation);
-            if (!annotationInstances.isEmpty()) {
-                // TODO it would be good to record WHERE the annotations are referenced from. At least the class where it happens.
-                // But I am not sure about what some of the 'Kind's returned by AnnotationInstance.target().kind are at the moment.
-                // The ones I am unsure about are Kind.TYPE and Kind.RECORD_COMPONENT
-                annotations.add(annotation);
-                noAnnotationUsage = false;
+            Collection<AnnotationInstance> annotationInstances = annotationIndex.getAnnotations(annotation);
+            for (AnnotationInstance instance : annotationInstances) {
+                AnnotationTarget target = instance.target();
+                addAnnotationTarget(annotationsByTarget, annotation, target);
             }
         }
-        if (annotations.size() > 0) {
-            usages.add(new AnnotatedAnnotation(annotations));
+        processAnnotationTargets(annotationsByTarget);
+        return annotationsByTarget.isEmpty();
+    }
+
+    private void addAnnotationTarget(Map<AnnotationTarget, Set<String>> annotationsByTarget, String annotation, AnnotationTarget target) {
+        if (target.kind() == AnnotationTarget.Kind.TYPE) {
+            addAnnotationTarget(annotationsByTarget, annotation, target.asType().enclosingTarget());
+            return;
         }
-        return noAnnotationUsage;
+        if (target.kind() == AnnotationTarget.Kind.METHOD_PARAMETER) {
+            MethodParameterInfo minfo = target.asMethodParameter();
+            target = minfo.method();
+
+        }
+        Set<String> annotations = annotationsByTarget.computeIfAbsent(target, k -> new HashSet<>());
+        annotations.add(annotation);
+    }
+
+    private boolean processAnnotationTargets(Map<AnnotationTarget, Set<String>> annotationsByTarget) {
+        Set<AnnotationUsage> annotationUsages = new HashSet<>();
+        for (AnnotationTarget target : annotationsByTarget.keySet()) {
+            Set<String> annotations = annotationsByTarget.get(target);
+            AnnotationTarget.Kind kind = target.kind();
+            if (kind == AnnotationTarget.Kind.CLASS) {
+                ClassInfo classInfo = target.asClass();
+                annotationUsages.add(new AnnotationOnUserClassUsage(classInfo.name().toString(), annotations));
+
+            } else if (kind == AnnotationTarget.Kind.FIELD) {
+                FieldInfo fieldInfo = target.asField();
+                String className = fieldInfo.declaringClass().name().toString();
+                String fieldName = fieldInfo.name();
+                annotationUsages.add(new AnnotationOnUserFieldUsage(className, fieldName, annotations));
+            } else if (kind == AnnotationTarget.Kind.METHOD) {
+                MethodInfo methodInfo;
+                if (kind == AnnotationTarget.Kind.METHOD_PARAMETER) {
+                    MethodParameterInfo pinfo = target.asMethodParameter();
+                    methodInfo = pinfo.method();
+                } else {
+                    methodInfo = target.asMethod();
+                }
+                String className = methodInfo.declaringClass().name().toString();
+                String methodName = methodInfo.name();
+                String desc = methodInfo.descriptor();
+                annotationUsages.add(new AnnotationOnUserMethodUsage(className, methodName, desc, annotations));
+            } else if (kind == AnnotationTarget.Kind.TYPE) {
+                // This should not happen. We are getting the enclosing target for this case in addAnnotationTarget
+                throw new IllegalStateException();
+            } else if (kind == AnnotationTarget.Kind.METHOD_PARAMETER) {
+                // This should not happen. We are getting the method containing the method in addAnnotationTarget
+            } else if (kind == AnnotationTarget.Kind.RECORD_COMPONENT) {
+                // TODO
+                RecordComponentInfo info = target.asRecordComponent();
+                info.name();
+            }
+        }
+        this.usages.addAll(annotationUsages);
+        return annotationUsages.isEmpty();
     }
 
     private void recordMethodUsage(ClassInformation classInfo, Set<String> annotations, ByteArrayKey classNameFromReference, ByteArrayKey nameFromReference, ByteArrayKey descriptorFromReference) throws IOException {
@@ -183,4 +238,5 @@ class ClassInfoCollector {
             return empty;
         }
     }
+
 }

@@ -3,7 +3,9 @@ package org.wildfly.experimental.api.classpath.runtime.bytecode;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.ANNOTATION_USAGE;
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.ANNOTATED_USER_CLASS;
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.ANNOTATED_USER_FIELD;
+import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.ANNOTATED_USER_METHOD;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.CLASS_USAGE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.EXTENDS_CLASS;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.FIELD_REFERENCE;
@@ -29,6 +31,11 @@ public abstract class AnnotationUsage {
         return annotations;
     }
 
+    /**
+     * Casts this instance to {@link ExtendsAnnotatedClass}
+     * @return this instance cast to {@link ExtendsAnnotatedClass}
+     * @throws IllegalStateException if {@link #getType()} is not {@link AnnotationUsageType#EXTENDS_CLASS}
+     */
     public ExtendsAnnotatedClass asExtendsAnnotatedClass() {
         if (type != EXTENDS_CLASS) {
             throw new IllegalStateException();
@@ -36,6 +43,11 @@ public abstract class AnnotationUsage {
         return (ExtendsAnnotatedClass) this;
     }
 
+    /**
+     * Casts this instance to {@link ImplementsAnnotatedInterface}
+     * @return this instance cast to {@link ImplementsAnnotatedInterface}
+     * @throws IllegalStateException if {@link #getType()} is not {@link AnnotationUsageType#IMPLEMENTS_INTERFACE}
+     */
     public ImplementsAnnotatedInterface asImplementsAnnotatedInterface() {
         if (type != IMPLEMENTS_INTERFACE) {
             throw new IllegalStateException();
@@ -43,6 +55,11 @@ public abstract class AnnotationUsage {
         return (ImplementsAnnotatedInterface) this;
     }
 
+    /**
+     * Casts this instance to {@link AnnotatedMethodReference}
+     * @return this instance cast to {@link AnnotatedMethodReference}
+     * @throws IllegalStateException if {@link #getType()} is not {@link AnnotationUsageType#METHOD_REFERENCE}
+     */
     public AnnotatedMethodReference asAnnotatedMethodReference() {
         if (type != METHOD_REFERENCE) {
             throw new IllegalStateException();
@@ -50,6 +67,11 @@ public abstract class AnnotationUsage {
         return (AnnotatedMethodReference) this;
     }
 
+    /**
+     * Casts this instance to {@link AnnotatedFieldReference}
+     * @return this instance cast to {@link AnnotatedFieldReference}
+     * @throws IllegalStateException if {@link #getType()} is not {@link AnnotationUsageType#FIELD_REFERENCE}
+     */
     public AnnotatedFieldReference asAnnotatedFieldReference() {
         if (type != FIELD_REFERENCE) {
             throw new IllegalStateException();
@@ -57,6 +79,11 @@ public abstract class AnnotationUsage {
         return (AnnotatedFieldReference) this;
     }
 
+    /**
+     * Casts this instance to {@link AnnotatedClassUsage}
+     * @return this instance cast to {@link AnnotatedClassUsage}
+     * @throws IllegalStateException if {@link #getType()} is not {@link AnnotationUsageType#CLASS_USAGE}
+     */
     public AnnotatedClassUsage asAnnotatedClassUsage() {
         if (type != CLASS_USAGE) {
             throw new IllegalStateException();
@@ -64,11 +91,40 @@ public abstract class AnnotationUsage {
         return (AnnotatedClassUsage) this;
     }
 
-    public AnnotatedAnnotation asAnnotatedAnnotation() {
-        if (type != ANNOTATION_USAGE) {
+    /**
+     * Casts this instance to {@link AnnotationOnUserClassUsage}
+     * @return this instance cast to {@link AnnotationOnUserClassUsage}
+     * @throws IllegalStateException if {@link #getType()} is not {@link AnnotationUsageType#ANNOTATED_USER_CLASS}
+     */
+    public AnnotationOnUserClassUsage asAnnotationOnUserClassUsage() {
+        if (type != ANNOTATED_USER_CLASS) {
             throw new IllegalStateException();
         }
-        return (AnnotatedAnnotation) this;
+        return (AnnotationOnUserClassUsage) this;
+    }
+
+    /**
+     * Casts this instance to {@link AnnotationOnUserFieldUsage}
+     * @return this instance cast to {@link AnnotationOnUserFieldUsage}
+     * @throws IllegalStateException if {@link #getType()} is not {@link AnnotationUsageType#ANNOTATED_USER_FIELD}
+     */
+    public AnnotationOnUserFieldUsage asAnnotationOnUserFieldUsage() {
+        if (type != ANNOTATED_USER_FIELD) {
+            throw new IllegalStateException();
+        }
+        return (AnnotationOnUserFieldUsage) this;
+    }
+
+    /**
+     * Casts this instance to {@link AnnotationOnUserMethodUsage}
+     * @return this instance cast to {@link AnnotationOnUserMethodUsage}
+     * @throws IllegalStateException if {@link #getType()} is not {@link AnnotationUsageType#ANNOTATED_USER_METHOD}
+     */
+    public AnnotationOnUserMethodUsage asAnnotationOnUserMethodUsage() {
+        if (type != ANNOTATED_USER_METHOD) {
+            throw new IllegalStateException();
+        }
+        return (AnnotationOnUserMethodUsage) this;
     }
 
     @Override
