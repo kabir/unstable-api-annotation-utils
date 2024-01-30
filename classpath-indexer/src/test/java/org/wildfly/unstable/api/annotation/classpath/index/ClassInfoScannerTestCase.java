@@ -66,6 +66,7 @@ public class ClassInfoScannerTestCase {
         OverallIndex overallIndex = new OverallIndex();
         File file = TestUtils.createJar(
                 AnnotationWithExperimental.class,
+                NoUsage.class,
                 ClassWithExperimental.class,
                 InterfaceWithExperimental.class,
                 ClassWithExperimentalMethods.class,

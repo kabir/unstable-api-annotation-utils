@@ -27,9 +27,9 @@ import java.util.Set;
 
 public class JarAnnotationIndexerTestCase {
 
-    // TODO These are more of a runtime check thing I think? The classes will have been annotated
-    // implemented interface
-    // Super class
+    // These feel a bit like corner cases, especially for our first iteration
+    // TODO Method parameters
+    // TODO Method/Constructor parameters
 
 
     private static final String EXPERIMENTAL_ANNOTATION = Experimental.class.getName();

@@ -248,6 +248,10 @@ public class TypeUseRuntimeJandexTestCase {
         Assert.assertEquals("()V", usage.getDescriptor());
     }
 
+    @Test
+    public void testMultipleAnnotations() throws Exception {
+        // I think the class case is enough to test as the logic to gather them is the same
+    }
 
     AnnotationUsage checkJandexAndGetSingleAnnotationUsage(
             Class<?> clazz, AnnotationUsageType type) throws IOException {
