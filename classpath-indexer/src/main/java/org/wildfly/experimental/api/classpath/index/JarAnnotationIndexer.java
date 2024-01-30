@@ -52,8 +52,9 @@ public class JarAnnotationIndexer {
                         resultBuilder.addAnnotatedClass(className);
                     }
                 }
-            } else if (annotation.target().kind() == AnnotationTarget.Kind.METHOD) {
-                MethodInfo methodInfo = annotation.target().asMethod();
+            } else if (annotation.target().kind() == AnnotationTarget.Kind.METHOD || annotation.target().kind() == AnnotationTarget.Kind.METHOD_PARAMETER) {
+                MethodInfo methodInfo = annotation.target().kind() == AnnotationTarget.Kind.METHOD_PARAMETER ?
+                        annotation.target().asMethodParameter().method() : annotation.target().asMethod();
                 ClassInfo classInfo = methodInfo.declaringClass();
                 String className = classInfo.name().toString();
                 if (!excludedClasses.contains(className)) {

@@ -11,6 +11,10 @@ public class ClassWithExperimentalMethods {
 
     }
 
+    public void methodWithExperimentalParameter(@Experimental String s) {
+
+    }
+
     public void notAnnotated() {
 
     }

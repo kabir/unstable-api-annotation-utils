@@ -18,10 +18,6 @@ import java.util.Set;
 
 public class JarAnnotationIndexerTestCase {
 
-    // These feel a bit like corner cases, especially for our first iteration
-    // TODO Method parameters
-    // TODO Method/Constructor parameters
-
     // TODO These are more of a runtime check thing I think? The classes will have been annotated
     // implemented interface
     // Super class
@@ -45,13 +41,15 @@ public class JarAnnotationIndexerTestCase {
         JarAnnotationIndexer indexer = new JarAnnotationIndexer(file, EXPERIMENTAL_ANNOTATION, Collections.emptySet());
         JarAnnotationIndex result = indexer.scanForAnnotation();
         Set<AnnotatedMethod> set = result.getAnnotatedMethods();
-        Assert.assertEquals(5, set.size());
+        Assert.assertEquals(7, set.size());
 
         Assert.assertTrue(set.contains(new AnnotatedMethod(AnnotationWithExperimentalMethods.class.getName(), "value", "()Ljava/lang/String;")));
         Assert.assertTrue(set.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), "test", "(Ljava/lang/String;)V")));
         Assert.assertTrue(set.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), "test", "()V")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), "methodWithExperimentalParameter", "(Ljava/lang/String;)V")));
         Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), "test", "(Ljava/lang/String;)V")));
         Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), "test", "()V")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), "methodWithExperimentalParameter", "(Ljava/lang/String;)V")));
     }
     @Test
     public void testScanConstructorAnnotations() throws Exception {
@@ -59,9 +57,10 @@ public class JarAnnotationIndexerTestCase {
         JarAnnotationIndexer indexer = new JarAnnotationIndexer(file, EXPERIMENTAL_ANNOTATION, Collections.emptySet());
         JarAnnotationIndex result = indexer.scanForAnnotation();
         Set<AnnotatedConstructor> set = result.getAnnotatedConstructors();
-        Assert.assertEquals(2, set.size());
+        Assert.assertEquals(3, set.size());
 
         Assert.assertTrue(set.contains(new AnnotatedConstructor(ClassWithExperimentalConstructors.class.getName(), "(Ljava/lang/String;)V")));
+        Assert.assertTrue(set.contains(new AnnotatedConstructor(ClassWithExperimentalConstructors.class.getName(), "()V")));
         Assert.assertTrue(set.contains(new AnnotatedConstructor(ClassWithExperimentalConstructors.class.getName(), "()V")));
     }
 

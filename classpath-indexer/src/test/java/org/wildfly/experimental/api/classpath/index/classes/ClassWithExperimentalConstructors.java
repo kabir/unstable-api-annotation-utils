@@ -11,6 +11,10 @@ public class ClassWithExperimentalConstructors {
 
     }
 
+    public ClassWithExperimentalConstructors(@Experimental int i) {
+
+    }
+
     public ClassWithExperimentalConstructors(Long l) {
 
     }

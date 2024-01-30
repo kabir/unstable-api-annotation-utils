@@ -6,5 +6,7 @@ public interface InterfaceWithExperimentalMethods {
     @Experimental
     public void test(String s);
 
+    void methodWithExperimentalParameter(@Experimental String s);
+
     public void notAnnotated();
 }
