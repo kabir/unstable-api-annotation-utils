@@ -61,7 +61,7 @@ public class JarAnnotationIndexerTestCase {
 
         Assert.assertTrue(set.contains(new AnnotatedConstructor(ClassWithExperimentalConstructors.class.getName(), "(Ljava/lang/String;)V")));
         Assert.assertTrue(set.contains(new AnnotatedConstructor(ClassWithExperimentalConstructors.class.getName(), "()V")));
-        Assert.assertTrue(set.contains(new AnnotatedConstructor(ClassWithExperimentalConstructors.class.getName(), "()V")));
+        Assert.assertTrue(set.contains(new AnnotatedConstructor(ClassWithExperimentalConstructors.class.getName(), "(I)V")));
     }
 
     @Test
