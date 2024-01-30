@@ -4,13 +4,22 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.wildfly.experimental.api.classpath.index.classes.AnnotationWithExperimental;
 import org.wildfly.experimental.api.classpath.index.classes.AnnotationWithExperimentalMethods;
+import org.wildfly.experimental.api.classpath.index.classes.AnnotationWithExperimentalMethodsTypeUse;
+import org.wildfly.experimental.api.classpath.index.classes.AnnotationWithExperimentalTypeUse;
 import org.wildfly.experimental.api.classpath.index.classes.ClassWithExperimental;
 import org.wildfly.experimental.api.classpath.index.classes.ClassWithExperimentalConstructors;
+import org.wildfly.experimental.api.classpath.index.classes.ClassWithExperimentalConstructorsTypeUse;
 import org.wildfly.experimental.api.classpath.index.classes.ClassWithExperimentalFields;
+import org.wildfly.experimental.api.classpath.index.classes.ClassWithExperimentalFieldsTypeUse;
 import org.wildfly.experimental.api.classpath.index.classes.ClassWithExperimentalMethods;
+import org.wildfly.experimental.api.classpath.index.classes.ClassWithExperimentalMethodsTypeUse;
+import org.wildfly.experimental.api.classpath.index.classes.ClassWithExperimentalTypeUse;
 import org.wildfly.experimental.api.classpath.index.classes.Experimental;
+import org.wildfly.experimental.api.classpath.index.classes.ExperimentalTypeUse;
 import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperimental;
 import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperimentalMethods;
+import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperimentalMethodsTypeUse;
+import org.wildfly.experimental.api.classpath.index.classes.InterfaceWithExperimentalTypeUse;
 
 import java.io.File;
 import java.util.Collections;
@@ -24,6 +33,7 @@ public class JarAnnotationIndexerTestCase {
 
 
     private static final String EXPERIMENTAL_ANNOTATION = Experimental.class.getName();
+    private static final String EXPERIMENTAL_ANNOTATION_WITH_TYPE_USE = ExperimentalTypeUse.class.getName();
 
     @Test
     public void testScanClassLevelAnnotations() throws Exception {
@@ -33,6 +43,17 @@ public class JarAnnotationIndexerTestCase {
         checkSet(result.getAnnotatedAnnotations(), AnnotationWithExperimental.class.getName());
         checkSet(result.getAnnotatedClasses(), ClassWithExperimental.class.getName());
         checkSet(result.getAnnotatedInterfaces(), InterfaceWithExperimental.class.getName());
+    }
+
+    @Test
+    public void testScanClassLevelAnnotationsWithTypeUse() throws Exception {
+        // The Jandex lookup works differently when TYPE_USE is one of the targets
+        File file = TestUtils.createJar(AnnotationWithExperimentalTypeUse.class, ClassWithExperimentalTypeUse.class, InterfaceWithExperimentalTypeUse.class);
+        JarAnnotationIndexer indexer = new JarAnnotationIndexer(file, EXPERIMENTAL_ANNOTATION_WITH_TYPE_USE, Collections.emptySet());
+        JarAnnotationIndex result = indexer.scanForAnnotation();
+        checkSet(result.getAnnotatedAnnotations(), AnnotationWithExperimentalTypeUse.class.getName());
+        checkSet(result.getAnnotatedClasses(), ClassWithExperimentalTypeUse.class.getName());
+        checkSet(result.getAnnotatedInterfaces(), InterfaceWithExperimentalTypeUse.class.getName());
     }
 
     @Test
@@ -51,6 +72,29 @@ public class JarAnnotationIndexerTestCase {
         Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), "test", "()V")));
         Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), "methodWithExperimentalParameter", "(Ljava/lang/String;)V")));
     }
+
+    @Test
+    public void testScanMethodAnnotationsWithTypeUse() throws Exception {
+        // The Jandex lookup works differently when TYPE_USE is one of the targets
+        File file = TestUtils.createJar(ClassWithExperimentalMethodsTypeUse.class, InterfaceWithExperimentalMethodsTypeUse.class, AnnotationWithExperimentalMethodsTypeUse.class);
+        JarAnnotationIndexer indexer = new JarAnnotationIndexer(file, EXPERIMENTAL_ANNOTATION_WITH_TYPE_USE, Collections.emptySet());
+        JarAnnotationIndex result = indexer.scanForAnnotation();
+        Set<AnnotatedMethod> set = result.getAnnotatedMethods();
+        Assert.assertEquals(11, set.size());
+
+        Assert.assertTrue(set.contains(new AnnotatedMethod(AnnotationWithExperimentalMethodsTypeUse.class.getName(), "value", "()Ljava/lang/String;")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(ClassWithExperimentalMethodsTypeUse.class.getName(), "test", "(Ljava/lang/String;)V")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(ClassWithExperimentalMethodsTypeUse.class.getName(), "test", "()V")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(ClassWithExperimentalMethodsTypeUse.class.getName(), "methodWithExperimentalParameter", "(Ljava/lang/String;)V")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(ClassWithExperimentalMethodsTypeUse.class.getName(), "methodWithExperimentalTypeParameter", "(Ljava/util/List;)V")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(ClassWithExperimentalMethodsTypeUse.class.getName(), "methodWithExperimentalTypeReturn", "()Ljava/util/List;")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethodsTypeUse.class.getName(), "test", "(Ljava/lang/String;)V")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethodsTypeUse.class.getName(), "test", "()V")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethodsTypeUse.class.getName(), "methodWithExperimentalParameter", "(Ljava/lang/String;)V")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethodsTypeUse.class.getName(), "methodWithExperimentalTypeParameter", "(Ljava/util/List;)V")));
+        Assert.assertTrue(set.contains(new AnnotatedMethod(InterfaceWithExperimentalMethodsTypeUse.class.getName(), "methodWithExperimentalTypeReturn", "()Ljava/util/List;")));
+    }
+
     @Test
     public void testScanConstructorAnnotations() throws Exception {
         File file = TestUtils.createJar(ClassWithExperimentalConstructors.class);
@@ -65,6 +109,21 @@ public class JarAnnotationIndexerTestCase {
     }
 
     @Test
+    public void testScanConstructorAnnotationsWithTypeUse() throws Exception {
+        // The Jandex lookup works differently when TYPE_USE is one of the targets
+        File file = TestUtils.createJar(ClassWithExperimentalConstructorsTypeUse.class);
+        JarAnnotationIndexer indexer = new JarAnnotationIndexer(file, EXPERIMENTAL_ANNOTATION_WITH_TYPE_USE, Collections.emptySet());
+        JarAnnotationIndex result = indexer.scanForAnnotation();
+        Set<AnnotatedConstructor> set = result.getAnnotatedConstructors();
+        Assert.assertEquals(4, set.size());
+
+        Assert.assertTrue(set.contains(new AnnotatedConstructor(ClassWithExperimentalConstructorsTypeUse.class.getName(), "(Ljava/lang/String;)V")));
+        Assert.assertTrue(set.contains(new AnnotatedConstructor(ClassWithExperimentalConstructorsTypeUse.class.getName(), "()V")));
+        Assert.assertTrue(set.contains(new AnnotatedConstructor(ClassWithExperimentalConstructorsTypeUse.class.getName(), "(Ljava/util/List;)V")));
+        Assert.assertTrue(set.contains(new AnnotatedConstructor(ClassWithExperimentalConstructorsTypeUse.class.getName(), "(Ljava/util/List;)V")));
+    }
+
+    @Test
     public void testScanFieldAnnotations() throws Exception {
         File file = TestUtils.createJar(ClassWithExperimentalFields.class);
         JarAnnotationIndexer indexer = new JarAnnotationIndexer(file, EXPERIMENTAL_ANNOTATION, Collections.emptySet());
@@ -73,6 +132,19 @@ public class JarAnnotationIndexerTestCase {
         Assert.assertEquals(2, set.size());
         Assert.assertTrue(set.contains(new AnnotatedField(ClassWithExperimentalFields.class.getName(), "fieldA")));
         Assert.assertTrue(set.contains(new AnnotatedField(ClassWithExperimentalFields.class.getName(), "fieldB")));
+    }
+
+    @Test
+    public void testScanFieldAnnotationsWithTypeUse() throws Exception {
+        // The Jandex lookup works differently when TYPE_USE is one of the targets
+        File file = TestUtils.createJar(ClassWithExperimentalFieldsTypeUse.class);
+        JarAnnotationIndexer indexer = new JarAnnotationIndexer(file, EXPERIMENTAL_ANNOTATION_WITH_TYPE_USE, Collections.emptySet());
+        JarAnnotationIndex result = indexer.scanForAnnotation();
+        Set<AnnotatedField> set = result.getAnnotatedFields();
+        Assert.assertEquals(3, set.size());
+        Assert.assertTrue(set.contains(new AnnotatedField(ClassWithExperimentalFieldsTypeUse.class.getName(), "fieldA")));
+        Assert.assertTrue(set.contains(new AnnotatedField(ClassWithExperimentalFieldsTypeUse.class.getName(), "fieldB")));
+        Assert.assertTrue(set.contains(new AnnotatedField(ClassWithExperimentalFieldsTypeUse.class.getName(), "fieldWithTypeAnnotation")));
     }
 
 
