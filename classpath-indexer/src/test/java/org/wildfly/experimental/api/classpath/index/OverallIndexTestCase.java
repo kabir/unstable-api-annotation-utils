@@ -39,17 +39,20 @@ public class OverallIndexTestCase {
         checkSet(index.getAnnotatedInterfaces(), InterfaceWithExperimental.class.getName());
 
         Set<AnnotatedMethod> methodsSet = index.getAnnotatedMethods();
-        Assert.assertEquals(5, methodsSet.size());
+        Assert.assertEquals(7, methodsSet.size());
         Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(AnnotationWithExperimentalMethods.class.getName(), "value", "()Ljava/lang/String;")));
         Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), "test", "(Ljava/lang/String;)V")));
         Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), "test", "()V")));
+        Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(ClassWithExperimentalMethods.class.getName(), "methodWithExperimentalParameter", "(Ljava/lang/String;)V")));
         Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), "test", "(Ljava/lang/String;)V")));
         Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), "test", "()V")));
+        Assert.assertTrue(methodsSet.contains(new AnnotatedMethod(InterfaceWithExperimentalMethods.class.getName(), "methodWithExperimentalParameter", "(Ljava/lang/String;)V")));
 
         Set<AnnotatedConstructor> constructorSet = index.getAnnotatedConstructors();
-        Assert.assertEquals(2, constructorSet.size());
+        Assert.assertEquals(3, constructorSet.size());
         Assert.assertTrue(constructorSet.contains(new AnnotatedConstructor(ClassWithExperimentalConstructors.class.getName(), "(Ljava/lang/String;)V")));
         Assert.assertTrue(constructorSet.contains(new AnnotatedConstructor(ClassWithExperimentalConstructors.class.getName(), "()V")));
+        Assert.assertTrue(constructorSet.contains(new AnnotatedConstructor(ClassWithExperimentalConstructors.class.getName(), "(I)V")));
 
         Set<AnnotatedField> fieldSet = index.getAnnotatedFields();
         Assert.assertEquals(2, fieldSet.size());
