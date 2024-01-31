@@ -36,8 +36,8 @@ import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotatedFieldRef
 import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotatedMethodReference;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsage;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType;
-import org.wildfly.experimental.api.classpath.runtime.bytecode.ExtendsAnnotatedClass;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassInfoScanner;
+import org.wildfly.experimental.api.classpath.runtime.bytecode.ExtendsAnnotatedClass;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ImplementsAnnotatedInterface;
 
 import java.io.File;
