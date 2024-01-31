@@ -10,6 +10,11 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
 
+/**
+ * Inspects the bytecode for one class (typically from user code) and checks against the
+ * {@link RuntimeIndex} if it calls any methods, fields, constructors or extends/implements
+ * classes/interfaces/annotations marked with an annotation marked as 'experimental'.
+ */
 public class ClassInfoScanner {
 
     // Constant Pool constants
@@ -38,12 +43,10 @@ public class ClassInfoScanner {
         int size = readUnsignedShort(in) - 1;
 
         byte[] constPool = null;
-        int[] offsets = null;
-        int[] tags = null;
         try {
             constPool = tmpObjects.borrowConstantPool(size);
-            offsets = new int[size];
-            tags = new int[size];
+            int[] offsets = new int[size];
+            int[] tags = new int[size];
             int lastOffset = 0;
             for (int pos = 0, offset = 0; pos < size; pos++) {
                 int tag = readUnsignedByte(in);

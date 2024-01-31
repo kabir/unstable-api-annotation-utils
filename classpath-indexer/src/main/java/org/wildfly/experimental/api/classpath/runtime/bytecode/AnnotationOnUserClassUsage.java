@@ -5,6 +5,10 @@ import java.util.Set;
 
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.ANNOTATED_USER_CLASS;
 
+/**
+ * Records a class in user bytecode that has been annotated with one of the annotations
+ * we recorded as 'experimental' in the {@link org.wildfly.experimental.api.classpath.index.OverallIndex}
+ */
 public class AnnotationOnUserClassUsage extends AnnotationUsage {
     private final String clazz;
 
@@ -18,6 +22,10 @@ public class AnnotationOnUserClassUsage extends AnnotationUsage {
         return this;
     }
 
+    /**
+     * Gets the name of the class
+     * @return the class name
+     */
     public String getClazz() {
         return clazz;
     }

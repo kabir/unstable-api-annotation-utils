@@ -12,6 +12,10 @@ import static org.wildfly.experimental.api.classpath.runtime.bytecode.Annotation
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.IMPLEMENTS_INTERFACE;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.METHOD_REFERENCE;
 
+/**
+ * Abstract base class for all usage of classes, methods, fields, constructors etc. where annotations marked
+ * as 'experimental' happened. The intent is for this to be run on code supplied by the user.
+ */
 public abstract class AnnotationUsage {
     protected final Set<String> annotations;
     protected final AnnotationUsageType type;
@@ -23,10 +27,20 @@ public abstract class AnnotationUsage {
         this.type = type;
     }
 
+    /**
+     * Gets the type of annotation usage for this instance. The type
+     * indicates which of the {@code asXXX()} methods we can call. These methods in turn
+     * cast to the indicated type
+     * @return the annotation usage type.
+     */
     public AnnotationUsageType getType() {
         return type;
     }
 
+    /**
+     * Gets the indexed annotations used for this particular usage
+     * @return the annotations
+     */
     public Set<String> getAnnotations() {
         return annotations;
     }
@@ -145,12 +159,19 @@ public abstract class AnnotationUsage {
         return h;
     }
 
+    /**
+     * Method to calculate the hash. We cache this to avoid having to call {@link #hashCode()} each time.
+     * @return the calculated hash
+     */
     protected int calculateHash() {
         return Objects.hash(annotations, type);
     }
 
-    // When reading the bytecode, the class names will be in JVM format (e.g. java/lang/Class).
-    // We keep that for fast lookups during the indexing.
-    // When returning the data to the users we convert to the more familiar 'dot format' (i.e. java.lang.Class)
+    /**
+     * When reading the bytecode, the class names will be in JVM format (e.g. {@code java/lang/Class}). We keep that for fast
+     * lookups during the indexing. When returning the data to the users we convert to the more familiar
+     * 'dot format' (i.e. {@code java.lang.Class})
+     * @return the converted AnnotationUsage instance
+     */
     protected abstract AnnotationUsage convertToDotFormat();
 }

@@ -17,6 +17,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+/**
+ * In a nutshell this class reads an {@link OverallIndex}, and stores it in an optimised way so that it can
+ * be read quickly. This is used by the {@link org.wildfly.experimental.api.classpath.runtime.bytecode.ClassInfoScanner}
+ * to avoid needing to convert all the Utf8Info entries in the bytecode to strings.
+ */
 public class RuntimeIndex {
     public static final String BYTECODE_CONSTRUCTOR_NAME = "<init>";
 
@@ -31,11 +36,18 @@ public class RuntimeIndex {
             0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74
     };
 
+
+    /**
+     * ByteArrayKey for java/lang/Object
+     */
     public static final ByteArrayKey JAVA_LANG_OBJECT_KEY = ByteArrayKey.create(OBJECT_BYTES, 0, OBJECT_BYTES.length);
 
     private static final ByteArrayOutputStream BYTE_ARRAY_OUTPUT_STREAM = new ByteArrayOutputStream(2048);
 
 
+    /**
+     * {@code }<init>} (i.e. the bytecode name of a constructor) as a ByteArrayKey
+     */
     public static final ByteArrayKey BYTECODE_CONSTRUCTOR_KEY;
     static {
         try {
@@ -45,27 +57,57 @@ public class RuntimeIndex {
         }
     }
 
-    // Classes, interfaces and annotations, and their annotations
-    // We are including annotations here since users might decide to implement an annotation interface
-    // that is marked as experimental
+    /**
+     * Extended classed, implements interfaces and annotations, and the annotations they have been annotated with.
+     * We are including annotations here since users might decide to implement an annotation interface
+     * that is marked as experimental
+     */
     private final Map<ByteArrayKey, Set<String>> allClassesWithAnnotations;
 
-    // Annotations with annotations. Although these are also part of allClassesWithAnnotations,
-    // this field will be needed as input to the Jandex scanning for annotation usage
+    //
+
+    /**
+     * Annotations with annotations. Although these are also part of {@link #allClassesWithAnnotations}, this field
+     * will be needed as input to the Jandex scanning for annotation usage
+     */
     private final Map<String, Set<String>> annotationsWithAnnotations;
 
 
-    // Keys in 'nested order' are className, methodname, descriptor. The set is the annotations for the method.
+    /**
+     * Keys in 'nested order' are class name, method name, descriptor. The set is the annotations for the method
+     * pointed at pu each entry.
+     */
     private final Map<ByteArrayKey, Map<ByteArrayKey, Map<ByteArrayKey, Set<String>>>> methodsWithAnnotations;
 
-    // Keys in 'nested order' are className, fieldName. The set is the annotations for the method.
+    /**
+     * Keys in 'nested order' are class name, field name. The set is the annotations for the field.
+     */
     private final Map<ByteArrayKey, Map<ByteArrayKey, Set<String>>> fieldsWithAnnotations;
 
 
+    /**
+     * The names of all classes found indexed by their ByteArrayKey
+     */
     private final Map<ByteArrayKey, String> classNamesByKey;
+
+    /**
+     * The ByteArrayKeys of all classes found indexed by their string name
+     */
     private final Map<String, ByteArrayKey> classKeysByName;
+
+    /**
+     * The names of all method names found indexed by their ByteArrayKey
+     */
     private final Map<ByteArrayKey, String> methodNamesByKey;
+
+    /**
+     * The names of all field names found indexed by their ByteArrayKey
+     */
     private final Map<ByteArrayKey, String> fieldNamesByKey;
+
+    /**
+     * The string representations of all method descriptors found indexed by their ByteArrayKey
+     */
     private final Map<ByteArrayKey, String> methodDescriptorsByKey;
 
 
@@ -90,11 +132,25 @@ public class RuntimeIndex {
         this.methodDescriptorsByKey = Collections.unmodifiableMap(methodDescriptorsByKey);
     }
 
+    /**
+     * Loads the runtime index from a file containing a serialized index, and creates a RuntimeIndex instance with the information.
+     * @param indexFile the location of the index file
+     * @param additional additional index file locations
+     * @return the created runtime index
+     * @throws IOException if there are problems reading any of the files
+     */
     public static RuntimeIndex load(Path indexFile, Path... additional) throws IOException {
         OverallIndex overallIndex = OverallIndex.load(indexFile, additional);
         return convertOverallIndexToRuntimeIndex(overallIndex);
     }
 
+    /**
+     * Loads the runtime index from locations specified as URLs, and creates a RuntimeIndex instance with the information.
+     * The URLs should point to locations containing a serialized index.
+     * @param urls the urls containing serialized indexes
+     * @return the created overall index
+     * @throws IOException if there are problems reading any of the URLs
+     */
     public static RuntimeIndex load(List<URL> urls) throws IOException {
         OverallIndex overallIndex = OverallIndex.load(urls);
         return convertOverallIndexToRuntimeIndex(overallIndex);
@@ -219,26 +275,62 @@ public class RuntimeIndex {
         return new ByteArrayKey(BYTE_ARRAY_OUTPUT_STREAM.toByteArray());
     }
 
+    /** Converts a class name in dotname format (e.g. {@code org.acme.MyClass}) to JVM format
+     * (e.g. {@code org/acme/MyClass})
+     *
+     * @param s the class name
+     * @return the converted class name
+     */
     public static String convertClassNameToVmFormat(String s) {
         return s.replaceAll("\\.", "/");
     }
 
+    /** Converts a class name in JVM format (e.g. {@code org/acme/MyClass}) to dotname format
+     * (e.g. {@code org.acme.MyClass})
+     *
+     * @param s the class name
+     * @return the converted class name
+     */
     public static String convertClassNameToDotFormat(String s) {
         return s.replaceAll("/", ".");
     }
 
+    /**
+     * Gets the annotations for a class
+     *
+     * @param key the name of the class
+     * @return the annotation names. May be {@code null} if there are none
+     */
     public Set<String> getAnnotationsForClass(ByteArrayKey key) {
         return allClassesWithAnnotations.get(key);
     }
 
+    /**
+     * Gets the annotations for an annotation
+     * @param annotation the name of the annotation
+     * @return the annotation names. May be {@code null} if there are none
+     */
     public Set<String> getAnnotationsForAnnotation(String annotation) {
         return annotationsWithAnnotations.get(annotation);
     }
 
+    /**
+     * Gets all the annotations which have been annotated with one of annotations we searched for when
+     * creating the {@link OverallIndex}
+     * @return the annotation names.
+     */
     public Set<String> getAnnotatedAnnotations() {
         return annotationsWithAnnotations.keySet();
     }
 
+    /**
+     * Get the annotations for a method from the information in the {@link OverallIndex}
+     *
+     * @param methodClass the name of the class containing the method
+     * @param methodName the name of the method
+     * @param methodDescriptor the method descriptor
+     * @return the annotation names. May be {@code null} if there are none
+     */
     public Set<String> getAnnotationsForMethod(ByteArrayKey methodClass, Supplier<ByteArrayKey> methodName, Supplier<ByteArrayKey> methodDescriptor) {
         Map<ByteArrayKey, Map<ByteArrayKey, Set<String>>> methodsInClass = methodsWithAnnotations.get(methodClass);
         if (methodsInClass == null) {
@@ -251,6 +343,12 @@ public class RuntimeIndex {
         return methodDescriptors.get(methodDescriptor.get());
     }
 
+    /**
+     * Get the annotations for a field from the information in the {@link OverallIndex}
+     * @param fieldClass the name of the class containing the field
+     * @param fieldName the name of the field
+     * @return the annotation names. May be {@code null} if there are none
+     */
     public Set<String> getAnnotationsForField(ByteArrayKey fieldClass, Supplier<ByteArrayKey> fieldName) {
         Map<ByteArrayKey, Set<String>> fieldsInClass = fieldsWithAnnotations.get(fieldClass);
         if (fieldsInClass == null) {
@@ -259,28 +357,57 @@ public class RuntimeIndex {
         return fieldsInClass.get(fieldName.get());
     }
 
+    /**
+     * Gets the class name from the key for all classes contained in this index.
+     * @param key the key
+     * @return the classname. May be {@code null} if there are none
+     */
     public String getClassNameFromKey(ByteArrayKey key) {
         return classNamesByKey.get(key);
 
     }
 
+    /**
+     * Gets the field name from the key for all fields contained in this index.
+     * @param key the key
+     * @return the field name. May be {@code null} if there are none
+     */
     public String getFieldNameFromKey(ByteArrayKey key) {
         return fieldNamesByKey.get(key);
     }
 
+    /**
+     * Gets the method name from the key for all methods contained in this index.
+     * @param key the key
+     * @return the method name. May be {@code null} if there are none
+     */
     public String getMethodNameFromKey(ByteArrayKey key) {
         return methodNamesByKey.get(key);
     }
 
+    /**
+     * Gets the method descriptor from the key for all methods contained in this index.
+     * @param key the key
+     * @return the method descriptor. May be {@code null} if there are none
+     */
     public String getMethodDescriptorsFromKey(ByteArrayKey key) {
         return methodDescriptorsByKey.get(key);
     }
 
+    /**
+     * Gets the annotations on a class
+     * @param superClassName the class to look for
+     * @return the annotations. May be {@code null} if there are none
+     */
     public Set<String> getAnnotationsForClass(String superClassName) {
         ByteArrayKey key = classKeysByName.get(superClassName);
         return getAnnotationsForClass(key);
     }
 
+    /**
+     * A key used for map lookup which takes an array and uses a subsection of that as the key value.
+     * This reduces the need for creating new instances for each sub-array.
+     */
     public static class ByteArrayKey {
         private final byte[] arr;
         private final int start;
@@ -288,6 +415,11 @@ public class RuntimeIndex {
 
         private volatile int hash = 0;
 
+        /**
+         * Constructor
+         *
+         * @param arr the array to use as the key. The whole array will be used
+         */
         private ByteArrayKey(byte[] arr) {
             this(arr, 0, arr.length);
         }
@@ -302,6 +434,14 @@ public class RuntimeIndex {
             this.length = length;
 
         }
+
+        /**
+         * Static factory method
+         * @param arr the array to use as the key
+         * @param start the first index of the array to use for lookups
+         * @param length the length of the part of the array to use for lookups
+         * @return the created key
+         */
         public static ByteArrayKey create(byte[] arr, int start, int length) {
             return new ByteArrayKey(arr, start, length);
         }
@@ -331,6 +471,12 @@ public class RuntimeIndex {
             return Arrays.equals(arr, start, start + length, that.arr, that.start, that.start + that.length);
         }
 
+        /**
+         * Converts the relevant bytes from this key to their string representation
+         * @param reusableStreams factory to obtain reusable streams
+         * @return the string from these bytes
+         * @throws IOException
+         */
         public String convertBytesToString(ReusableStreams reusableStreams) throws IOException {
             try (DataInputStream in = reusableStreams.getDataInputStream(arr, start, length)) {
                 return in.readUTF();

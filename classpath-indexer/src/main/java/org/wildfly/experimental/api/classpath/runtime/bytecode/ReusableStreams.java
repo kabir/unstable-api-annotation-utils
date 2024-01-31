@@ -7,9 +7,20 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Objects;
 
+/**
+ * Copied from jandex. The intent is to avoid the overhead of creating an input stream and a bytebuffer every time
+ * we need to read some bytes
+ */
 public class ReusableStreams {
     private final ReusableByteArrayDataInputStream dataInput = new ReusableByteArrayDataInputStream(new ReplaceableByteArrayInputStream(new byte[0], 0, 0));
 
+    /**
+     * Gets a data input stream for the parts of the array indicated
+     * @param buf the array
+     * @param offset the start index to read data from
+     * @param length the length to read data from
+     * @return the datainput stream
+     */
     public DataInputStream getDataInputStream(byte[] buf, int offset, int length) {
         dataInput.setByteInput(buf, offset, length);
         return dataInput;

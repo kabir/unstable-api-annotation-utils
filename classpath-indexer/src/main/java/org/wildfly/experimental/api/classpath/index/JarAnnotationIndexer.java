@@ -17,12 +17,22 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * <p>Reads a jar on the classpath and looks for all occurrences of an annotation.</p>
+ * <p>The results are an instance of {@link JarAnnotationIndex}</p>.
+ */
 public class JarAnnotationIndexer {
     private final File file;
     private final String experimentalAnnotation;
 
     private final Set<String> excludedClasses;
 
+    /**
+     * Constructor
+     * @param file the jar file to scan
+     * @param annotation the fully qualified name of the annotation to search for, e.g. {@code org.acme.AnAnnotation}
+     * @param excludedClasses a set of classes that should not be scanned when indexing the jar.
+     */
     public JarAnnotationIndexer(File file, String annotation, Set<String> excludedClasses) {
         if (file == null || annotation == null || excludedClasses == null) {
             throw new NullPointerException("Null parameter");
@@ -32,8 +42,13 @@ public class JarAnnotationIndexer {
         this.excludedClasses = excludedClasses;
     }
 
+    /**
+     * Scans the jar and creates a JarAnnotationIndex
+     * @return the JarAnnotationIndex
+     * @throws IOException if the jar file could not be read
+     */
     public JarAnnotationIndex scanForAnnotation() throws IOException {
-        Set<String> foundClasses = new HashSet<>();
+        // Use jandex to find all places the annotation is used in the jar
         Indexer indexer = new Indexer();
         Result result = JarIndexer.createJarIndex(file, indexer, false, true, false);
         Index index = result.getIndex();

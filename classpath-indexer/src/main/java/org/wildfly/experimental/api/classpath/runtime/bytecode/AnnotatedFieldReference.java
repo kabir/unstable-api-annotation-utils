@@ -6,6 +6,10 @@ import java.util.Set;
 import static org.wildfly.experimental.api.classpath.index.RuntimeIndex.convertClassNameToDotFormat;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.FIELD_REFERENCE;
 
+/**
+ * Records usage in user bytecode of a field that has been annotated with one of the annotations
+ * we recorded as 'experimental' in the {@link org.wildfly.experimental.api.classpath.index.OverallIndex}
+ */
 public class AnnotatedFieldReference extends AnnotationWithSourceClassUsage {
     private final String fieldClass;
     private final String fieldName;
@@ -16,10 +20,18 @@ public class AnnotatedFieldReference extends AnnotationWithSourceClassUsage {
         this.fieldName = fieldName;
     }
 
+    /**
+     * Gets the class containing the field
+     * @return the name of the class
+     */
     public String getFieldClass() {
         return fieldClass;
     }
 
+    /**
+     * Gets the name of the field
+     * @return the field name
+     */
     public String getFieldName() {
         return fieldName;
     }

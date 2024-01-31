@@ -6,6 +6,10 @@ import java.util.Set;
 import static org.wildfly.experimental.api.classpath.index.RuntimeIndex.convertClassNameToDotFormat;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.METHOD_REFERENCE;
 
+/**
+ * Records usage in user bytecode of a method that has been annotated with one of the annotations
+ * we recorded as 'experimental' in the {@link org.wildfly.experimental.api.classpath.index.OverallIndex}
+ */
 public class AnnotatedMethodReference extends AnnotationWithSourceClassUsage {
     private final String methodClass;
     private final String methodName;
@@ -18,14 +22,26 @@ public class AnnotatedMethodReference extends AnnotationWithSourceClassUsage {
         this.descriptor = descriptor;
     }
 
+    /**
+     * Gets the name of the class containing the method
+     * @return the name of the class
+     */
     public String getMethodClass() {
         return methodClass;
     }
 
+    /**
+     * Gets the name of the method
+     * @return the method name
+     */
     public String getMethodName() {
         return methodName;
     }
 
+    /**
+     * Gets the descriptor
+     * @return the method descriptor
+     */
     public String getDescriptor() {
         return descriptor;
     }

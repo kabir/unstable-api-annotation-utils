@@ -1,6 +1,6 @@
 package org.wildfly.experimental.api.classpath.runtime.bytecode;
 
-public class BytecodeTags {
+class BytecodeTags {
     static final int CONSTANT_CLASS = 7;
     static final int CONSTANT_FIELDREF = 9;
     static final int CONSTANT_METHODREF = 10;

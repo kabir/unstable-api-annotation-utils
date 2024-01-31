@@ -3,6 +3,11 @@ package org.wildfly.experimental.api.classpath.runtime.bytecode;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Abstract base class for all usage of classes, methods, fields, constructors etc. that have been annotated with
+ * annotations marked as 'experimental', where there is a class in the user source code that contains one of these
+ * references. The intent is for this to be run on code supplied by the user.
+ */
 public abstract class AnnotationWithSourceClassUsage extends AnnotationUsage {
     protected final String sourceClass;
 
@@ -11,6 +16,10 @@ public abstract class AnnotationWithSourceClassUsage extends AnnotationUsage {
         this.sourceClass = sourceClass;
     }
 
+    /**
+     * Gets the class containing the annotation usage
+     * @return the class name
+     */
     public String getSourceClass() {
         return sourceClass;
     }

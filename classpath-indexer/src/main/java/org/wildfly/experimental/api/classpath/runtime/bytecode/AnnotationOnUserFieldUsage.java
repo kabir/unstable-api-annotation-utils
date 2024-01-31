@@ -5,6 +5,10 @@ import java.util.Set;
 
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.ANNOTATED_USER_FIELD;
 
+/**
+ * Records a field in user bytecode that has been annotated with one of the annotations
+ * we recorded as 'experimental' in the {@link org.wildfly.experimental.api.classpath.index.OverallIndex}
+ */
 public class AnnotationOnUserFieldUsage extends AnnotationUsage {
     private final String clazz;
     private final String fieldName;
@@ -20,10 +24,18 @@ public class AnnotationOnUserFieldUsage extends AnnotationUsage {
         return this;
     }
 
+    /**
+     * Gets the name of the class containing the field
+     * @return the class name
+     */
     public String getClazz() {
         return clazz;
     }
 
+    /**
+     * Gets the name of the field
+     * @return the field
+     */
     public String getFieldName() {
         return fieldName;
     }

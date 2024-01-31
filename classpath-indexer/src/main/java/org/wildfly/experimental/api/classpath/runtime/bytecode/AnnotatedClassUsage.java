@@ -6,6 +6,10 @@ import java.util.Set;
 import static org.wildfly.experimental.api.classpath.index.RuntimeIndex.convertClassNameToDotFormat;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.CLASS_USAGE;
 
+/**
+ * Records usage in user bytecode of a class that has been annotated with one of the annotations
+ * we recorded as 'experimental' in the {@link org.wildfly.experimental.api.classpath.index.OverallIndex}
+ */
 public class AnnotatedClassUsage extends AnnotationWithSourceClassUsage {
     private final String referencedClass;
 
@@ -14,6 +18,10 @@ public class AnnotatedClassUsage extends AnnotationWithSourceClassUsage {
         this.referencedClass = referencedClass;
     }
 
+    /**
+     * Gets the name of the referenced class
+     * @return the referenced class
+     */
     public String getReferencedClass() {
         return referencedClass;
     }

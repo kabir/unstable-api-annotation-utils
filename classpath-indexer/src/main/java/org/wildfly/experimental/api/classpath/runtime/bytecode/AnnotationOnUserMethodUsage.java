@@ -5,6 +5,10 @@ import java.util.Set;
 
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.ANNOTATED_USER_METHOD;
 
+/**
+ * Records a method in user bytecode that has been annotated with one of the annotations
+ * we recorded as 'experimental' in the {@link org.wildfly.experimental.api.classpath.index.OverallIndex}
+ */
 public class AnnotationOnUserMethodUsage extends AnnotationUsage {
     private final String clazz;
     private final String methodName;
@@ -22,14 +26,26 @@ public class AnnotationOnUserMethodUsage extends AnnotationUsage {
         return this;
     }
 
+    /**
+     * Gets the name of the class containing the method
+     * @return the class name
+     */
     public String getClazz() {
         return clazz;
     }
 
+    /**
+     * Gets the name of the method
+     * @return the method name
+     */
     public String getMethodName() {
         return methodName;
     }
 
+    /**
+     * Gets the desciptor of the method
+     * @return the method descriptor
+     */
     public String getDescriptor() {
         return descriptor;
     }

@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Contains the index of locations in the classpath where an annotation has been found.
+ * Contains the index of locations where an annotation we are interested in has been found.
  */
 public class AnnotationIndex {
 
@@ -37,6 +37,17 @@ public class AnnotationIndex {
     private final Set<AnnotatedConstructor> annotatedConstructors;
     private final Set<AnnotatedField> annotatedFields;
 
+    /**
+     * Constructor
+     *
+     * @param annotationName the fully qualified name (e.g. {@code org.acme.MyAnnotation}) of the annotation that is indexed
+     * @param annotatedInterfaces interfaces annotated with {@code annotationName}
+     * @param annotatedClasses classes annotated with {@code annotationName}
+     * @param annotatedAnnotations annotations annotated with {@code annotationName}
+     * @param annotatedMethods methods annotated with {@code annotationName}
+     * @param annotatedConstructors constructors annotated with {@code annotationName}
+     * @param annotatedFields fields annotated with {@code annotationName}
+     */
     protected AnnotationIndex(String annotationName,
                               Set<String> annotatedInterfaces,
                               Set<String> annotatedClasses,
@@ -53,6 +64,10 @@ public class AnnotationIndex {
         this.annotatedFields = annotatedFields;
     }
 
+    /**
+     * Copy constructor
+     * @param annotationIndex the AnnotationIndex to copy
+     */
     AnnotationIndex(AnnotationIndex annotationIndex) {
         this(annotationIndex.annotationName,
                 annotationIndex.annotatedInterfaces,
@@ -63,44 +78,82 @@ public class AnnotationIndex {
                 annotationIndex.annotatedFields);
     }
 
-    void addIndexEntries(AnnotationIndex jarAnnotationIndex) {
-        annotatedInterfaces.addAll(jarAnnotationIndex.getAnnotatedInterfaces());
-        annotatedClasses.addAll(jarAnnotationIndex.getAnnotatedClasses());
-        annotatedAnnotations.addAll(jarAnnotationIndex.getAnnotatedAnnotations());
-        annotatedMethods.addAll(jarAnnotationIndex.getAnnotatedMethods());
-        annotatedConstructors.addAll(jarAnnotationIndex.getAnnotatedConstructors());
-        annotatedFields.addAll(jarAnnotationIndex.getAnnotatedFields());
+    /**
+     * Add entries from another index to this one
+     *
+     * @param annotationIndex the AnnotationIndex to add entries from
+     */
+    void addIndexEntries(AnnotationIndex annotationIndex) {
+        annotatedInterfaces.addAll(annotationIndex.getAnnotatedInterfaces());
+        annotatedClasses.addAll(annotationIndex.getAnnotatedClasses());
+        annotatedAnnotations.addAll(annotationIndex.getAnnotatedAnnotations());
+        annotatedMethods.addAll(annotationIndex.getAnnotatedMethods());
+        annotatedConstructors.addAll(annotationIndex.getAnnotatedConstructors());
+        annotatedFields.addAll(annotationIndex.getAnnotatedFields());
     }
 
+    /**
+     * Gets the searched annotation name
+     * @return the annotation name
+     */
     String getAnnotationName() {
         return annotationName;
     }
 
+    /**
+     * Gets the names of interfaces annotated with {@code #getAnnotationName()}
+     * @return the interface names
+     */
     Set<String> getAnnotatedInterfaces() {
         return annotatedInterfaces;
     }
 
+    /**
+     * Gets the names of classes annotated with {@code #getAnnotationName()}
+     * @return the class names
+     */
     Set<String> getAnnotatedClasses() {
         return annotatedClasses;
     }
 
+    /**
+     * Gets the names of annotations annotated with {@code #getAnnotationName()}
+     * @return the constructors
+     */
     Set<String> getAnnotatedAnnotations() {
         return annotatedAnnotations;
     }
 
+    /**
+     * Gets the methods annotated with {@code #getAnnotationName()}
+     * @return the annotation name
+     */
     Set<AnnotatedMethod> getAnnotatedMethods() {
         return annotatedMethods;
     }
 
+    /**
+     * Gets the constructors annotated with {@code #getAnnotationName()}
+     * @return the constructors
+     */
     Set<AnnotatedConstructor> getAnnotatedConstructors() {
         return annotatedConstructors;
     }
 
+    /**
+     * Gets the fields annotated with {@code #getAnnotationName()}
+     * @return the fields
+     */
     Set<AnnotatedField> getAnnotatedFields() {
         return annotatedFields;
     }
 
-
+    /**
+     * Called internally to save the locations where the annotation {@link #getAnnotationName()} was found.
+     * The results are serialized to the PrintWriter (typically to a file).
+     *
+     * @param writer the PrintWriter
+     */
     void save(PrintWriter writer) {
         if (!annotatedInterfaces.isEmpty()
                 || !annotatedClasses.isEmpty()
@@ -132,6 +185,12 @@ public class AnnotationIndex {
         }
     }
 
+    /**
+     * Loads a serialized index from a reader
+     * @param reader the reader containing the serialized index
+     * @return a map of AnnotationIndex entries, grouped by the
+     * @throws IOException
+     */
     static Map<String, AnnotationIndex> loadAll(BufferedReader reader) throws IOException {
         Map<String, AnnotationIndex> map = new HashMap<>();
         String line = reader.readLine();

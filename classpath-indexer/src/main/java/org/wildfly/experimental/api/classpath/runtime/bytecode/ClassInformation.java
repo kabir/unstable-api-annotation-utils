@@ -7,7 +7,11 @@ import java.io.IOException;
 
 import static org.wildfly.experimental.api.classpath.index.RuntimeIndex.convertClassNameToDotFormat;
 
-public class ClassInformation {
+/**
+ * Internal class to contain relevant information about a scanned class. It avoids converting from bytes
+ * to Strings etc. as much as possible to keep overhead low.
+ */
+class ClassInformation {
 
     private static final ByteArrayKey[] EMPTY_BYTE_ARRAY_KEY_ARRAY = new ByteArrayKey[0];
 

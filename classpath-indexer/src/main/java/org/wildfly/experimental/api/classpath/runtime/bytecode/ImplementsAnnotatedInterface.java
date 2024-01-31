@@ -6,6 +6,10 @@ import java.util.Set;
 import static org.wildfly.experimental.api.classpath.index.RuntimeIndex.convertClassNameToDotFormat;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.IMPLEMENTS_INTERFACE;
 
+/**
+ * Records a class in user bytecode that implements an interface that has been annotated with one of the annotations
+ * we recorded as 'experimental' in the {@link org.wildfly.experimental.api.classpath.index.OverallIndex}
+ */
 public class ImplementsAnnotatedInterface extends AnnotationWithSourceClassUsage {
     private final String iface;
 
@@ -14,6 +18,10 @@ public class ImplementsAnnotatedInterface extends AnnotationWithSourceClassUsage
         this.iface = iface;
     }
 
+    /**
+     * Gets the implemented interface that has been annotated with an 'experimental'
+     * @return the interface name
+     */
     public String getInterface() {
         return iface;
     }

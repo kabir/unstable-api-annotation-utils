@@ -6,6 +6,10 @@ import java.util.Set;
 import static org.wildfly.experimental.api.classpath.index.RuntimeIndex.convertClassNameToDotFormat;
 import static org.wildfly.experimental.api.classpath.runtime.bytecode.AnnotationUsageType.EXTENDS_CLASS;
 
+/**
+ * Records a class in user bytecode that extends a class that has been annotated with one of the annotations
+ * we recorded as 'experimental' in the {@link org.wildfly.experimental.api.classpath.index.OverallIndex}
+ */
 public class ExtendsAnnotatedClass extends AnnotationWithSourceClassUsage {
     private final String superClass;
 
@@ -14,6 +18,10 @@ public class ExtendsAnnotatedClass extends AnnotationWithSourceClassUsage {
         this.superClass = superClass;
     }
 
+    /**
+     * Gets the extended class that has been annotated with one of the 'experimental' annotations
+     * @return the super class name
+     */
     public String getSuperClass() {
         return superClass;
     }
