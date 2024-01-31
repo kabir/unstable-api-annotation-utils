@@ -1,6 +1,6 @@
 package org.wildfly.experimental.api.classpath.runtime.bytecode;
 
-import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex;
+import org.wildfly.experimental.api.classpath.index.RuntimeIndex;
 
 import java.io.BufferedInputStream;
 import java.io.EOFException;
@@ -18,7 +18,7 @@ public class ClassInfoScanner {
     private final ClassInfoCollector collector;
     private final TmpObjects tmpObjects = new TmpObjects();
 
-    public ClassInfoScanner(ByteRuntimeIndex runtimeIndex) {
+    public ClassInfoScanner(RuntimeIndex runtimeIndex) {
         this.collector = new ClassInfoCollector(runtimeIndex);
     }
 

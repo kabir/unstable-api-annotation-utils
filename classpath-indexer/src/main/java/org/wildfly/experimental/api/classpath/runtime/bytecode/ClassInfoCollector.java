@@ -7,8 +7,8 @@ import org.jboss.jandex.FieldInfo;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.MethodParameterInfo;
 import org.jboss.jandex.RecordComponentInfo;
-import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex;
-import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.ByteArrayKey;
+import org.wildfly.experimental.api.classpath.index.RuntimeIndex;
+import org.wildfly.experimental.api.classpath.index.RuntimeIndex.ByteArrayKey;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -18,17 +18,17 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.JAVA_LANG_OBJECT_KEY;
-import static org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.convertClassNameToDotFormat;
+import static org.wildfly.experimental.api.classpath.index.RuntimeIndex.JAVA_LANG_OBJECT_KEY;
+import static org.wildfly.experimental.api.classpath.index.RuntimeIndex.convertClassNameToDotFormat;
 
 class ClassInfoCollector {
-    private final ByteRuntimeIndex runtimeIndex;
+    private final RuntimeIndex runtimeIndex;
 
     private final ReusableStreams reusableStreams = new ReusableStreams();
 
     private final Set<AnnotationUsage> usages = new LinkedHashSet<>();
 
-    ClassInfoCollector(ByteRuntimeIndex runtimeIndex) {
+    ClassInfoCollector(RuntimeIndex runtimeIndex) {
         this.runtimeIndex = runtimeIndex;
     }
 

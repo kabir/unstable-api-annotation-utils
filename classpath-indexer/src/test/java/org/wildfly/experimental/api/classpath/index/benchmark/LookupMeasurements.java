@@ -1,6 +1,6 @@
 package org.wildfly.experimental.api.classpath.index.benchmark;
 
-import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.ByteArrayKey;
+import org.wildfly.experimental.api.classpath.index.RuntimeIndex.ByteArrayKey;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;

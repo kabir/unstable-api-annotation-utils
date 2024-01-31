@@ -59,7 +59,7 @@ import static org.wildfly.experimental.api.classpath.runtime.bytecode.Annotation
 public class ClassInfoScannerTestCase {
     private static final String EXPERIMENTAL_ANNOTATION = Experimental.class.getName();
 
-    ByteRuntimeIndex runtimeIndex;
+    RuntimeIndex runtimeIndex;
 
     @Before
     public void createRuntimeIndex() throws IOException {
@@ -78,7 +78,7 @@ public class ClassInfoScannerTestCase {
         Path p = Paths.get("target/index/runtime-test");
         overallIndex.save(p);
 
-        runtimeIndex = ByteRuntimeIndex.load(p);
+        runtimeIndex = RuntimeIndex.load(p);
     }
 
     @Test

@@ -1,11 +1,11 @@
 package org.wildfly.experimental.api.classpath.runtime.bytecode;
 
-import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex;
-import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.ByteArrayKey;
+import org.wildfly.experimental.api.classpath.index.RuntimeIndex;
+import org.wildfly.experimental.api.classpath.index.RuntimeIndex.ByteArrayKey;
 
 import java.io.IOException;
 
-import static org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex.convertClassNameToDotFormat;
+import static org.wildfly.experimental.api.classpath.index.RuntimeIndex.convertClassNameToDotFormat;
 
 public class ClassInformation {
 
@@ -114,9 +114,9 @@ public class ClassInformation {
     }
 
 
-    private ByteRuntimeIndex.ByteArrayKey getKeyFromUtfInfo(int constantPoolPosition) {
+    private RuntimeIndex.ByteArrayKey getKeyFromUtfInfo(int constantPoolPosition) {
         int index = constantPoolPosition - 1;
-        ByteRuntimeIndex.ByteArrayKey key = byteArrayKeys[index];
+        RuntimeIndex.ByteArrayKey key = byteArrayKeys[index];
         if (key == null) {
             int offset = offsets[index];
 

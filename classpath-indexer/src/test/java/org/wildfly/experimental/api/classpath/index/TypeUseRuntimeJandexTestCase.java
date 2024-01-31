@@ -52,7 +52,7 @@ import static org.wildfly.experimental.api.classpath.runtime.bytecode.Annotation
  */
 public class TypeUseRuntimeJandexTestCase {
     private static final String EXPERIMENTAL_ANNOTATION = Experimental.class.getName();
-    ByteRuntimeIndex runtimeIndex;
+    RuntimeIndex runtimeIndex;
     @Before
     public void createRuntimeIndex() throws IOException {
         OverallIndex overallIndex = new OverallIndex();
@@ -63,7 +63,7 @@ public class TypeUseRuntimeJandexTestCase {
         Path p = Paths.get("target/index/runtime-test");
         overallIndex.save(p);
 
-        runtimeIndex = ByteRuntimeIndex.load(p);
+        runtimeIndex = RuntimeIndex.load(p);
     }
 
     @Test
@@ -247,10 +247,6 @@ public class TypeUseRuntimeJandexTestCase {
         Assert.assertEquals("()V", usage.getDescriptor());
     }
 
-
-    String convertClassNameToVmFormat(Class<?> clazz) {
-        return RuntimeIndex.convertClassNameToVmFormat(clazz.getName());
-    }
 
     AnnotationUsage checkJandexAndGetSingleAnnotationUsage(
             Class<?> clazz, AnnotationUsageType type) throws IOException {

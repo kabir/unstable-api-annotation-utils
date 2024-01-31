@@ -1,7 +1,6 @@
 package org.wildfly.experimental.api.classpath.index.benchmark;
 
 import org.jboss.jandex.Indexer;
-import org.wildfly.experimental.api.classpath.index.ByteRuntimeIndex;
 import org.wildfly.experimental.api.classpath.index.RuntimeIndex;
 import org.wildfly.experimental.api.classpath.runtime.bytecode.ClassInfoScanner;
 
@@ -47,7 +46,6 @@ public class Benchmark {
 
         Path indexFile = indexDir.resolve("index.txt");
         RuntimeIndex runtimeIndex;
-        ByteRuntimeIndex byteRuntimeIndex;
         try (BufferedReader reader = new BufferedReader(new FileReader(indexFile.toFile()))) {
             List<URL> list = new ArrayList<>();
             String line = reader.readLine();
@@ -56,7 +54,6 @@ public class Benchmark {
                 line = reader.readLine();
             }
             runtimeIndex = RuntimeIndex.load(list);
-            byteRuntimeIndex = ByteRuntimeIndex.load(list);
         }
 
         Map<String, List<Long>> runningTimes = new LinkedHashMap<>();
@@ -67,7 +64,7 @@ public class Benchmark {
             new JarReader(runningTimes, classpath, new NullWorker()).indexJar();
             new JarReader(runningTimes, classpath, new ConsumeAllBytesWorker()).indexJar();
             new JarReader(runningTimes, classpath, new JandexWorker()).indexJar();
-            new JarReader(runningTimes, classpath, new FastScannerWorker(byteRuntimeIndex)).indexJar();
+            new JarReader(runningTimes, classpath, new FastScannerWorker(runtimeIndex)).indexJar();
         }
 
         System.out.println("==== Final Results for " + iterations + " iterations");
@@ -186,14 +183,14 @@ public class Benchmark {
     }
 
     private static class FastScannerWorker implements JarReaderWorker {
-        private final ByteRuntimeIndex runtimeIndex;
+        private final RuntimeIndex runtimeIndex;
         private ClassInfoScanner scanner;
 
         Path currentJar;
 
         int failures;
 
-        private FastScannerWorker(ByteRuntimeIndex runtimeIndex) {
+        private FastScannerWorker(RuntimeIndex runtimeIndex) {
             this.runtimeIndex = runtimeIndex;
             scanner = new ClassInfoScanner(runtimeIndex);
         }
