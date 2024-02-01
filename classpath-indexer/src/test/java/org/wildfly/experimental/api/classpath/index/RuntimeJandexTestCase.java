@@ -185,12 +185,7 @@ public class RuntimeJandexTestCase {
 
     private boolean checkJandex(ClassInfoScanner inspector, Class<?> clazz) throws IOException {
         Index index = Index.of(clazz);
-        return inspector.checkAnnotationIndex(new JandexIndex() {
-            @Override
-            public Collection<AnnotationInstance> getAnnotations(String annotationName) {
-                return index.getAnnotations(annotationName);
-            }
-        });
+        return inspector.checkAnnotationIndex(annotationName -> index.getAnnotations(annotationName));
     }
 
 

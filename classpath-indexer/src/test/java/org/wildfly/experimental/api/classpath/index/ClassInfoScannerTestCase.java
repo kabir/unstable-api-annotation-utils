@@ -73,7 +73,7 @@ public class ClassInfoScannerTestCase {
                 AnnotationWithExperimentalMethods.class,
                 ClassWithExperimentalConstructors.class,
                 ClassWithExperimentalFields.class);
-        overallIndex.scanJar(file, EXPERIMENTAL_ANNOTATION, Collections.emptySet());
+        overallIndex.scanJar(file, EXPERIMENTAL_ANNOTATION);
 
         Path p = Paths.get("target/index/runtime-test");
         overallIndex.save(p);

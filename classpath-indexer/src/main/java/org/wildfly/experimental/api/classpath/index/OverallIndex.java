@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,18 @@ public class OverallIndex {
 
     private OverallIndex(Map<String, AnnotationIndex> indexes) {
         this.indexes = indexes;
+    }
+
+    /**
+     * Scans a jar and adds its annotations to our overall index
+     * @param jar the jar to scan
+     * @param annotation the annotation we are searching for
+     * @throws IOException if there were problems reading the jar
+     */
+    public void scanJar(File jar, String annotation) throws IOException {
+        JarAnnotationIndexer indexer = new JarAnnotationIndexer(jar, annotation, Collections.emptySet());
+        JarAnnotationIndex jarAnnotationIndex = indexer.scanForAnnotation();
+        mergeAnnotationIndex(jarAnnotationIndex);
     }
 
     /**
