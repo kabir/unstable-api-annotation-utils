@@ -12,8 +12,8 @@
         <relativePath/>
     </parent>
 
-    <groupId>org.wildfly.experimental.api</groupId>
-    <artifactId>experimental-api</artifactId>
+    <groupId>org.wildfly.unstable.api.annotation</groupId>
+    <artifactId>unstable-api-annotation</artifactId>
     <version>1.0.0.Alpha2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
@@ -41,7 +41,7 @@
         <dependencies>
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>experimental-api-classpath-indexer</artifactId>
+                <artifactId>unstable-api-annotation-classpath-indexer</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

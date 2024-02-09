@@ -1,7 +1,7 @@
-# Experimental Annotation Utilities
+# Unstable API Annotation Utilities
 
 Some Java libraries use an annotation to pick out parts of their API that is considered 
-'experimental'. This gives a signal to users that the class, method, field etc. annotated 
+unstable. This gives a signal to users that the class, method, field etc. annotated 
 with this annotation might go away in the future, or have its contract changed significantly.
 
 For further discussion in the README, we will call these annotations 'marker annotations'
@@ -29,7 +29,6 @@ public class APIObjectFactory {
 and
 
 ```java
-import org.wildfly.experimental.api.classpath.index.classes.Experimental;
 
 public class APIInterface {
 
@@ -121,8 +120,8 @@ We provide a Maven plugin wrapping the above code, so you can generate the index
 
 ```xml
 <plugin>
-    <groupId>org.wildfly.experimental.api</groupId>
-    <artifactId>experimental-api-classpath-indexer-plugin</artifactId>
+    <groupId>org.wildfly.unstable.api.annotation</groupId>
+    <artifactId>unstable-api-annotation-classpath-indexer-plugin</artifactId>
     <configuration>
         <outputFile>${project.build.directory}/index/wildfly-galleon-pack.txt</outputFile>
         <filters>
@@ -224,4 +223,4 @@ MyOtherClass calls APIInterface.processPerson(LPerson;)V which has been annotate
 
 Please see the child classes of `AnnotationUsage` for the various types of access that can be detected by the annotation scanner.
 
-Known issues/limitations are listed [here](https://github.com/kabir/experimental-annotation-utils/issues?q=is%3Aissue+label%3A%22Known+Issue%2FLimitation%22).
+Known issues/limitations are listed [here](https://github.com/kabir/unstable-api-annotation-utils/issues?q=is%3Aissue+label%3A%22Known+Issue%2FLimitation%22).

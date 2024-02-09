@@ -5,11 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.wildfly.experimental.api</groupId>
-        <artifactId>experimental-api</artifactId>
+        <groupId>org.wildfly.unstable.api.annotation</groupId>
+        <artifactId>unstable-api-annotation</artifactId>
         <version>1.0.0.Alpha2-SNAPSHOT</version>
     </parent>
-    <artifactId>experimental-api-classpath-indexer</artifactId>
+    <artifactId>unstable-api-annotation-classpath-indexer</artifactId>
 
     <dependencies>
         <dependency>
