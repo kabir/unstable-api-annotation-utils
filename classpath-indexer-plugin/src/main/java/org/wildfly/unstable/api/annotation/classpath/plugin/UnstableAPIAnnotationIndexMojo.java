@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 @Mojo(name="index-unstable-api-annotations", defaultPhase = LifecyclePhase.COMPILE, requiresDependencyResolution = ResolutionScope.COMPILE, requiresProject = true)
-public class ExperimentalAnnotationMojo
+public class UnstableAPIAnnotationIndexMojo
         extends AbstractMojo
 {
 
