@@ -89,6 +89,12 @@ class ClassInfoCollector {
                         classReferences.classes.put(runtimeIndex.getClassNameFromKey(key), annotations);
                     }
                 }
+                case BytecodeTags.CONSTANT_METHODHANDLE: {
+                    // We don't need to do anything! (I originally thought we did)
+                    // Basically this will point to a CONSTANT_FieldRef_Info, CONSTANT_MethodRed_Info or a
+                    // CONSTANT_InterfaceMethodRef_Info, which will all be inspected anyway in their relevant
+                    // case statements above.
+                }
                 break;
             }
         }
