@@ -48,9 +48,6 @@ public class UnstableAPIAnnotationIndexMojo
 
             log.info(filters.toString());
 
-            HashMap<String, String> m = new HashMap<>();
-            m.getOrDefault()
-
             List<Dependency> dependencies = mavenProject.getDependencies();
 
             for (Filter indexFilter : filters) {
