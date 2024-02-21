@@ -97,39 +97,15 @@ public abstract class AnnotationUsage {
     }
 
     /**
-     * Casts this instance to {@link AnnotationOnUserClassUsage}
-     * @return this instance cast to {@link AnnotationOnUserClassUsage}
-     * @throws IllegalStateException if {@link #getType()} is not {@link AnnotationUsageType#ANNOTATED_USER_CLASS}
+     * Casts this instance to {@link AnnotatedAnnotationUsage}
+     * @return this instance cast to {@link AnnotatedAnnotationUsage}
+     * @throws IllegalStateException if {@link #getType()} is not {@link AnnotationUsageType#ANNOTATED_ANNOTATION_USAGE}
      */
-    public AnnotationOnUserClassUsage asAnnotationOnUserClassUsage() {
-        if (type != AnnotationUsageType.ANNOTATED_USER_CLASS) {
+    public AnnotatedAnnotationUsage asAnnotatedAnnotationUsage() {
+        if (type != AnnotationUsageType.ANNOTATED_ANNOTATION_USAGE) {
             throw new IllegalStateException();
         }
-        return (AnnotationOnUserClassUsage) this;
-    }
-
-    /**
-     * Casts this instance to {@link AnnotationOnUserFieldUsage}
-     * @return this instance cast to {@link AnnotationOnUserFieldUsage}
-     * @throws IllegalStateException if {@link #getType()} is not {@link AnnotationUsageType#ANNOTATED_USER_FIELD}
-     */
-    public AnnotationOnUserFieldUsage asAnnotationOnUserFieldUsage() {
-        if (type != AnnotationUsageType.ANNOTATED_USER_FIELD) {
-            throw new IllegalStateException();
-        }
-        return (AnnotationOnUserFieldUsage) this;
-    }
-
-    /**
-     * Casts this instance to {@link AnnotationOnUserMethodUsage}
-     * @return this instance cast to {@link AnnotationOnUserMethodUsage}
-     * @throws IllegalStateException if {@link #getType()} is not {@link AnnotationUsageType#ANNOTATED_USER_METHOD}
-     */
-    public AnnotationOnUserMethodUsage asAnnotationOnUserMethodUsage() {
-        if (type != AnnotationUsageType.ANNOTATED_USER_METHOD) {
-            throw new IllegalStateException();
-        }
-        return (AnnotationOnUserMethodUsage) this;
+        return (AnnotatedAnnotationUsage) this;
     }
 
     @Override

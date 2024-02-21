@@ -15,13 +15,6 @@ public enum AnnotationUsageType {
     FIELD_REFERENCE,
     /** A scanned class uses a classannotated with an unstable api annotation */
     CLASS_USAGE,
-
-    /** A scanned class is annotated with an unstable api annotation */
-    ANNOTATED_USER_CLASS,
-
-    /** A method in a scanned class is annotated with an unstable api annotation */
-    ANNOTATED_USER_METHOD,
-
-    /** A field in a scanned class is annotated with an unstable api annotation */
-    ANNOTATED_USER_FIELD
+    /** A scanned class uses an annotation that has been annotated with an unstable api annotation*/
+    ANNOTATED_ANNOTATION_USAGE
 }

@@ -24,9 +24,7 @@ import org.wildfly.unstable.api.annotation.classpath.index.classes.usage.annotat
 import org.wildfly.unstable.api.annotation.classpath.index.classes.usage.annotation.typeuse.TypeMethodBodyAnnotatedWithExperimental;
 import org.wildfly.unstable.api.annotation.classpath.index.classes.usage.annotation.typeuse.TypeMethodParameterAnnotatedWithExperimental;
 import org.wildfly.unstable.api.annotation.classpath.index.classes.usage.annotation.typeuse.TypeMethodReturnAnnotatedWithExperimental;
-import org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.AnnotationOnUserClassUsage;
-import org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.AnnotationOnUserFieldUsage;
-import org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.AnnotationOnUserMethodUsage;
+import org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.AnnotatedAnnotationUsage;
 import org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.AnnotationUsage;
 import org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.AnnotationUsageType;
 import org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.ClassInfoScanner;
@@ -41,9 +39,7 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 
-import static org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.AnnotationUsageType.ANNOTATED_USER_CLASS;
-import static org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.AnnotationUsageType.ANNOTATED_USER_FIELD;
-import static org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.AnnotationUsageType.ANNOTATED_USER_METHOD;
+import static org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.AnnotationUsageType.ANNOTATED_ANNOTATION_USAGE;
 
 /**
  * Tests usage of annotations annotated with @Experimental.
@@ -77,9 +73,9 @@ public class TypeUseRuntimeJandexTestCase {
 
     @Test
     public void testClassAnnotationUsage() throws Exception {
-        AnnotationOnUserClassUsage usage =
-                checkJandexAndGetSingleAnnotationUsage(ClassAnnotatedWithTypeUseExperimental.class, ANNOTATED_USER_CLASS)
-                        .asAnnotationOnUserClassUsage();
+        AnnotatedAnnotationUsage usage =
+                checkJandexAndGetSingleAnnotationUsage(ClassAnnotatedWithTypeUseExperimental.class, ANNOTATED_ANNOTATION_USAGE)
+                        .asAnnotatedAnnotationUsage();
 
         Assert.assertEquals(1, usage.getAnnotations().size());
         Assert.assertTrue(usage.getAnnotations().contains(TypeUseAnnotationWithExperimental.class.getName()));
@@ -88,9 +84,9 @@ public class TypeUseRuntimeJandexTestCase {
 
     @Test
     public void testInterfaceAnnotationUsage() throws Exception {
-        AnnotationOnUserClassUsage usage =
-                checkJandexAndGetSingleAnnotationUsage(InterfaceAnnotatedWithTypeUseExperimental.class, ANNOTATED_USER_CLASS)
-                        .asAnnotationOnUserClassUsage();
+        AnnotatedAnnotationUsage usage =
+                checkJandexAndGetSingleAnnotationUsage(InterfaceAnnotatedWithTypeUseExperimental.class, ANNOTATED_ANNOTATION_USAGE)
+                        .asAnnotatedAnnotationUsage();
 
         Assert.assertEquals(1, usage.getAnnotations().size());
         Assert.assertTrue(usage.getAnnotations().contains(TypeUseAnnotationWithExperimental.class.getName()));
@@ -99,9 +95,9 @@ public class TypeUseRuntimeJandexTestCase {
 
     @Test
     public void testAnnotationAnnotationUsage() throws Exception {
-        AnnotationOnUserClassUsage usage =
-                checkJandexAndGetSingleAnnotationUsage(AnnotationAnnotatedWithTypeUseExperimental.class, ANNOTATED_USER_CLASS)
-                        .asAnnotationOnUserClassUsage();
+        AnnotatedAnnotationUsage usage =
+                checkJandexAndGetSingleAnnotationUsage(AnnotationAnnotatedWithTypeUseExperimental.class, ANNOTATED_ANNOTATION_USAGE)
+                        .asAnnotatedAnnotationUsage();
 
         Assert.assertEquals(1, usage.getAnnotations().size());
         Assert.assertTrue(usage.getAnnotations().contains(TypeUseAnnotationWithExperimental.class.getName()));
@@ -110,142 +106,122 @@ public class TypeUseRuntimeJandexTestCase {
 
     @Test
     public void testFieldAnnotationUsage() throws Exception {
-        AnnotationOnUserFieldUsage usage =
-                checkJandexAndGetSingleAnnotationUsage(FieldAnnotatedWithTypeUseExperimental.class, ANNOTATED_USER_FIELD)
-                        .asAnnotationOnUserFieldUsage();
+        AnnotatedAnnotationUsage usage =
+                checkJandexAndGetSingleAnnotationUsage(FieldAnnotatedWithTypeUseExperimental.class, ANNOTATED_ANNOTATION_USAGE)
+                        .asAnnotatedAnnotationUsage();
 
         Assert.assertEquals(1, usage.getAnnotations().size());
         Assert.assertTrue(usage.getAnnotations().contains(TypeUseAnnotationWithExperimental.class.getName()));
         Assert.assertEquals(FieldAnnotatedWithTypeUseExperimental.class.getName(), usage.getClazz());
-        Assert.assertEquals("field", usage.getFieldName());
     }
 
     @Test
     public void testMethodAnnotationUsage() throws Exception {
-        AnnotationOnUserMethodUsage usage =
-                checkJandexAndGetSingleAnnotationUsage(MethodAnnotatedWithTypeUseExperimental.class, ANNOTATED_USER_METHOD)
-                        .asAnnotationOnUserMethodUsage();
+        AnnotatedAnnotationUsage usage =
+                checkJandexAndGetSingleAnnotationUsage(MethodAnnotatedWithTypeUseExperimental.class, ANNOTATED_ANNOTATION_USAGE)
+                        .asAnnotatedAnnotationUsage();
 
         Assert.assertEquals(1, usage.getAnnotations().size());
         Assert.assertTrue(usage.getAnnotations().contains(TypeUseAnnotationWithExperimental.class.getName()));
         Assert.assertEquals(MethodAnnotatedWithTypeUseExperimental.class.getName(), usage.getClazz());
-        Assert.assertEquals("method", usage.getMethodName());
-        Assert.assertEquals("()V", usage.getDescriptor());
     }
 
     @Test
     public void testMethodParameterAnnotationUsage() throws Exception {
-        AnnotationOnUserMethodUsage usage =
-                checkJandexAndGetSingleAnnotationUsage(MethodParameterAnnotatedWithTypeUseExperimental.class, ANNOTATED_USER_METHOD)
-                        .asAnnotationOnUserMethodUsage();
+        AnnotatedAnnotationUsage usage =
+                checkJandexAndGetSingleAnnotationUsage(MethodParameterAnnotatedWithTypeUseExperimental.class, ANNOTATED_ANNOTATION_USAGE)
+                        .asAnnotatedAnnotationUsage();
 
         Assert.assertEquals(1, usage.getAnnotations().size());
         Assert.assertTrue(usage.getAnnotations().contains(TypeUseAnnotationWithExperimental.class.getName()));
         Assert.assertEquals(MethodParameterAnnotatedWithTypeUseExperimental.class.getName(), usage.getClazz());
-        Assert.assertEquals("method", usage.getMethodName());
-        Assert.assertEquals("(Ljava/lang/String;)V", usage.getDescriptor());
     }
 
     @Test
     public void testConstructorAnnotationUsage() throws Exception {
-        AnnotationOnUserMethodUsage usage =
-                checkJandexAndGetSingleAnnotationUsage(ConstructorAnnotatedWithTypeUseExperimental.class, ANNOTATED_USER_METHOD)
-                        .asAnnotationOnUserMethodUsage();
+        AnnotatedAnnotationUsage usage =
+                checkJandexAndGetSingleAnnotationUsage(ConstructorAnnotatedWithTypeUseExperimental.class, ANNOTATED_ANNOTATION_USAGE)
+                        .asAnnotatedAnnotationUsage();
 
         Assert.assertEquals(1, usage.getAnnotations().size());
         Assert.assertTrue(usage.getAnnotations().contains(TypeUseAnnotationWithExperimental.class.getName()));
         Assert.assertEquals(ConstructorAnnotatedWithTypeUseExperimental.class.getName(), usage.getClazz());
-        Assert.assertEquals(RuntimeIndex.BYTECODE_CONSTRUCTOR_NAME, usage.getMethodName());
-        Assert.assertEquals("()V", usage.getDescriptor());
     }
 
     @Test
     public void testConstructorParameterAnnotationUsage() throws Exception {
-        AnnotationOnUserMethodUsage usage =
-                checkJandexAndGetSingleAnnotationUsage(ConstructorParameterAnnotatedWithTypeUseExperimental.class, ANNOTATED_USER_METHOD)
-                        .asAnnotationOnUserMethodUsage();
+        AnnotatedAnnotationUsage usage =
+                checkJandexAndGetSingleAnnotationUsage(ConstructorParameterAnnotatedWithTypeUseExperimental.class, ANNOTATED_ANNOTATION_USAGE)
+                        .asAnnotatedAnnotationUsage();
 
         Assert.assertEquals(1, usage.getAnnotations().size());
         Assert.assertTrue(usage.getAnnotations().contains(TypeUseAnnotationWithExperimental.class.getName()));
         Assert.assertEquals(ConstructorParameterAnnotatedWithTypeUseExperimental.class.getName(), usage.getClazz());
-        Assert.assertEquals(RuntimeIndex.BYTECODE_CONSTRUCTOR_NAME, usage.getMethodName());
-        Assert.assertEquals("(Ljava/lang/String;)V", usage.getDescriptor());
     }
 
     @Test
     public void testTypeFieldAnnotationUsage() throws Exception {
-        AnnotationOnUserFieldUsage usage =
-                checkJandexAndGetSingleAnnotationUsage(TypeFieldAnnotatedWithTypeUseExperimental.class, ANNOTATED_USER_FIELD)
-                        .asAnnotationOnUserFieldUsage();
+        AnnotatedAnnotationUsage usage =
+                checkJandexAndGetSingleAnnotationUsage(TypeFieldAnnotatedWithTypeUseExperimental.class, ANNOTATED_ANNOTATION_USAGE)
+                        .asAnnotatedAnnotationUsage();
 
         Assert.assertEquals(1, usage.getAnnotations().size());
         Assert.assertTrue(usage.getAnnotations().contains(TypeUseAnnotationWithExperimental.class.getName()));
         Assert.assertEquals(TypeFieldAnnotatedWithTypeUseExperimental.class.getName(), usage.getClazz());
-        Assert.assertEquals("typeField", usage.getFieldName());
     }
 
     @Test
     public void testTypeMethodReturnAnnotationUsage() throws Exception {
-        AnnotationOnUserMethodUsage usage =
-                checkJandexAndGetSingleAnnotationUsage(TypeMethodReturnAnnotatedWithExperimental.class, ANNOTATED_USER_METHOD)
-                        .asAnnotationOnUserMethodUsage();
+        AnnotatedAnnotationUsage usage =
+                checkJandexAndGetSingleAnnotationUsage(TypeMethodReturnAnnotatedWithExperimental.class, ANNOTATED_ANNOTATION_USAGE)
+                        .asAnnotatedAnnotationUsage();
         Assert.assertEquals(1, usage.getAnnotations().size());
         Assert.assertTrue(usage.getAnnotations().contains(TypeUseAnnotationWithExperimental.class.getName()));
         Assert.assertEquals(TypeMethodReturnAnnotatedWithExperimental.class.getName(), usage.getClazz());
-        Assert.assertEquals("getList", usage.getMethodName());
-        Assert.assertEquals("()Ljava/util/List;", usage.getDescriptor());
     }
 
     @Test
     public void testTypeMethodParameterAnnotationUsage() throws Exception {
-        AnnotationOnUserMethodUsage usage =
-                checkJandexAndGetSingleAnnotationUsage(TypeMethodParameterAnnotatedWithExperimental.class, ANNOTATED_USER_METHOD)
-                        .asAnnotationOnUserMethodUsage();
+        AnnotatedAnnotationUsage usage =
+                checkJandexAndGetSingleAnnotationUsage(TypeMethodParameterAnnotatedWithExperimental.class, ANNOTATED_ANNOTATION_USAGE)
+                        .asAnnotatedAnnotationUsage();
         Assert.assertEquals(1, usage.getAnnotations().size());
         Assert.assertTrue(usage.getAnnotations().contains(TypeUseAnnotationWithExperimental.class.getName()));
         Assert.assertEquals(TypeMethodParameterAnnotatedWithExperimental.class.getName(), usage.getClazz());
-        Assert.assertEquals("setList", usage.getMethodName());
-        Assert.assertEquals("(Ljava/util/List;)V", usage.getDescriptor());
     }
 
     @Ignore("Jandex doesn't search method bodies")
     @Test
     public void testTypeMethodBodyAnnotationUsage() throws Exception {
-        AnnotationOnUserMethodUsage usage =
-                checkJandexAndGetSingleAnnotationUsage(TypeMethodBodyAnnotatedWithExperimental.class, ANNOTATED_USER_METHOD)
-                        .asAnnotationOnUserMethodUsage();
+        AnnotatedAnnotationUsage usage =
+                checkJandexAndGetSingleAnnotationUsage(TypeMethodBodyAnnotatedWithExperimental.class, ANNOTATED_ANNOTATION_USAGE)
+                        .asAnnotatedAnnotationUsage();
         Assert.assertEquals(1, usage.getAnnotations().size());
         Assert.assertTrue(usage.getAnnotations().contains(TypeUseAnnotationWithExperimental.class.getName()));
         Assert.assertEquals(TypeMethodBodyAnnotatedWithExperimental.class.getName(), usage.getClazz());
-        Assert.assertEquals("createList", usage.getMethodName());
-        Assert.assertEquals("()V", usage.getDescriptor());
 
     }
 
     @Test
     public void testTypeConstructorParameterAnnotationUsage() throws Exception {
-        AnnotationOnUserMethodUsage usage =
-                checkJandexAndGetSingleAnnotationUsage(TypeConstructorParameterAnnotatedWithExperimental.class, ANNOTATED_USER_METHOD)
-                        .asAnnotationOnUserMethodUsage();
+        AnnotatedAnnotationUsage usage =
+                checkJandexAndGetSingleAnnotationUsage(TypeConstructorParameterAnnotatedWithExperimental.class, ANNOTATED_ANNOTATION_USAGE)
+                        .asAnnotatedAnnotationUsage();
         Assert.assertEquals(1, usage.getAnnotations().size());
         Assert.assertTrue(usage.getAnnotations().contains(TypeUseAnnotationWithExperimental.class.getName()));
         Assert.assertEquals(TypeConstructorParameterAnnotatedWithExperimental.class.getName(), usage.getClazz());
-        Assert.assertEquals(RuntimeIndex.BYTECODE_CONSTRUCTOR_NAME, usage.getMethodName());
-        Assert.assertEquals("(Ljava/util/List;)V", usage.getDescriptor());
 
     }
 
     @Ignore("Jandex doesn't search method bodies")
     @Test
     public void testTypeConstructorBodyAnnotationUsage() throws Exception {
-        AnnotationOnUserMethodUsage usage =
-                checkJandexAndGetSingleAnnotationUsage(TypeConstructorBodyAnnotatedWithExperimental.class, ANNOTATED_USER_METHOD)
-                        .asAnnotationOnUserMethodUsage();
+        AnnotatedAnnotationUsage usage =
+                checkJandexAndGetSingleAnnotationUsage(TypeConstructorBodyAnnotatedWithExperimental.class, ANNOTATED_ANNOTATION_USAGE)
+                        .asAnnotatedAnnotationUsage();
         Assert.assertEquals(1, usage.getAnnotations().size());
         Assert.assertTrue(usage.getAnnotations().contains(TypeUseAnnotationWithExperimental.class.getName()));
         Assert.assertEquals(TypeConstructorBodyAnnotatedWithExperimental.class.getName(), usage.getClazz());
-        Assert.assertEquals(RuntimeIndex.BYTECODE_CONSTRUCTOR_NAME, usage.getMethodName());
-        Assert.assertEquals("()V", usage.getDescriptor());
     }
 
     @Test

@@ -5,22 +5,22 @@ import org.wildfly.unstable.api.annotation.classpath.index.OverallIndex;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.AnnotationUsageType.ANNOTATED_USER_CLASS;
+import static org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.AnnotationUsageType.ANNOTATED_ANNOTATION_USAGE;
 
 /**
  * Records a class in user bytecode that has been annotated with one of the annotations
  * we recorded as unstable api in the {@link OverallIndex}
  */
-public class AnnotationOnUserClassUsage extends AnnotationUsage {
+public class AnnotatedAnnotationUsage extends AnnotationUsage {
     private final String clazz;
 
-    AnnotationOnUserClassUsage(String clazz, Set<String> annotations) {
-        super(annotations, ANNOTATED_USER_CLASS);
+    AnnotatedAnnotationUsage(String clazz, Set<String> annotations) {
+        super(annotations, ANNOTATED_ANNOTATION_USAGE);
         this.clazz = clazz;
     }
 
     @Override
-    protected AnnotationOnUserClassUsage convertToDotFormat() {
+    protected AnnotatedAnnotationUsage convertToDotFormat() {
         return this;
     }
 
@@ -37,7 +37,7 @@ public class AnnotationOnUserClassUsage extends AnnotationUsage {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        AnnotationOnUserClassUsage that = (AnnotationOnUserClassUsage) o;
+        AnnotatedAnnotationUsage that = (AnnotatedAnnotationUsage) o;
         return Objects.equals(clazz, that.clazz);
     }
 

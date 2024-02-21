@@ -191,6 +191,7 @@ class ClassInfoCollector {
 
     private class AnnotationIndexChecker {
         private final JandexIndex annotationIndex;
+        private final Map<String, Set<String>> classAnnotations = new HashMap<>();
 
         public AnnotationIndexChecker(JandexIndex annotationIndex) {
             this.annotationIndex = annotationIndex;
@@ -198,21 +199,50 @@ class ClassInfoCollector {
 
         public boolean checkAnnotationIndex() {
             Map<AnnotationTarget, Set<String>> annotationsByTarget = new HashMap<>();
-            Set<RecordComponentInfo> recordComponents = new HashSet<>();
+
             for (String annotation : runtimeIndex.getAnnotatedAnnotations()) {
                 Collection<AnnotationInstance> annotationInstances = annotationIndex.getAnnotations(annotation);
                 for (AnnotationInstance instance : annotationInstances) {
                     AnnotationTarget target = instance.target();
-                    addAnnotationTarget(annotationsByTarget, recordComponents, annotation, target);
+                    if (target.kind() == AnnotationTarget.Kind.TYPE) {
+                        target = target.asType().enclosingTarget();
+                    }
+
+                    if (target.kind() == AnnotationTarget.Kind.METHOD_PARAMETER) {
+                        addClassAnnotation(target.asMethodParameter().method().declaringClass().name().toString(), annotation);
+                    } else if (target.kind() == AnnotationTarget.Kind.METHOD) {
+                        addClassAnnotation(target.asMethod().declaringClass().name().toString(), annotation);
+                    } else if (target.kind() == AnnotationTarget.Kind.CLASS) {
+                        addClassAnnotation(target.asClass().name().toString(), annotation);
+                    } else if (target.kind() == AnnotationTarget.Kind.FIELD) {
+                        addClassAnnotation(target.asField().declaringClass().name().toString(), annotation);
+                    } else if (target.kind() == AnnotationTarget.Kind.RECORD_COMPONENT) {
+                        addClassAnnotation(target.asRecordComponent().declaringClass().name().toString(), annotation);
+                    }
+                    //addAnnotationTarget(annotationsByTarget, recordComponents, annotation, target);
                 }
             }
 
-            trimRecordComponent(annotationsByTarget, recordComponents);
-            processAnnotationTargets(annotationsByTarget);
-            return annotationsByTarget.isEmpty();
+            if (classAnnotations.isEmpty()) {
+                return true;
+            }
+
+            for (Map.Entry<String, Set<String>> entry : classAnnotations.entrySet()) {
+                usages.add(new AnnotatedAnnotationUsage(entry.getKey(), entry.getValue()));
+            }
+
+
+            //trimRecordComponent(annotationsByTarget, recordComponents);
+            //processAnnotationTargets(annotationsByTarget);
+            return false;
         }
 
-        private void addAnnotationTarget(Map<AnnotationTarget, Set<String>> annotationsByTarget,
+        private void addClassAnnotation(String clazz, String annotation) {
+            Set<String> annotations = classAnnotations.computeIfAbsent(clazz, s -> new HashSet<>());
+            annotations.add(annotation);
+        }
+
+       /* private void addAnnotationTarget(Map<AnnotationTarget, Set<String>> annotationsByTarget,
                                          Set<RecordComponentInfo> recordComponents, String annotation, AnnotationTarget target) {
             if (target.kind() == AnnotationTarget.Kind.TYPE) {
                 addAnnotationTarget(annotationsByTarget, recordComponents, annotation, target.asType().enclosingTarget());
@@ -266,7 +296,7 @@ class ClassInfoCollector {
             }
             ClassInfoCollector.this.usages.addAll(annotationUsages);
             return annotationUsages.isEmpty();
-        }
+        }*/
     }
 
 }
