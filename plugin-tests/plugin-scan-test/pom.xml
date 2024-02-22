@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.wildfly.unstable.api.annotation</groupId>
+        <artifactId>unstable-api-annotation</artifactId>
+        <relativePath>../../pom.xml</relativePath>
+        <version>1.0.0.Alpha4-SNAPSHOT</version>
+    </parent>
+    <artifactId>unstable-api-annotation-plugin-tests-plugin-scan-test</artifactId>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>unstable-api-annotation-classpath-indexer</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.unscanned.unstable.api.annotation</groupId>
+            <artifactId>unstable-api-annotation-plugin-tests-unscanned-module</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>unstable-api-annotation-plugin-tests-test-module-a</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>unstable-api-annotation-plugin-tests-test-module-b</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.wildfly.unstable.api.annotation</groupId>
+                <artifactId>unstable-api-annotation-classpath-indexer-plugin</artifactId>
+                <version>${project.version}</version>
+                <configuration>
+                    <outputFile>${project.build.directory}/index/test-scan-index.txt</outputFile>
+                    <filters>
+                        <filter>
+                            <annotation>org.wildfly.unstable.api.annotation.test.api.MarkerAnnotation</annotation>
+                            <groupIds>
+                                <groupId>org.wildfly.unstable.api.annotation</groupId>
+                            </groupIds>
+                            <excludedClasses>
+                                <excludedClass>org.wildfly.unstable.api.annotation.test.api.a.IgnoredClassWithAnnotation</excludedClass>
+                            </excludedClasses>
+                        </filter>
+                        <filter>
+                            <annotation>org.wildfly.unstable.api.annotation.test.api.OtherMarker</annotation>
+                            <groupIds>
+                                <groupId>org.wildfly.unstable.api.annotation</groupId>
+                            </groupIds>
+                        </filter>
+                    </filters>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>scan-experimental-annotations</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>index-unstable-api-annotations</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

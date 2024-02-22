@@ -35,6 +35,10 @@
     <modules>
         <module>classpath-indexer</module>
         <module>classpath-indexer-plugin</module>
+        <module>plugin-tests/plugin-scan-test</module>
+        <module>plugin-tests/test-module-A</module>
+        <module>plugin-tests/test-module-B</module>
+        <module>plugin-tests/unscanned-module</module>
     </modules>
 
     <dependencyManagement>
