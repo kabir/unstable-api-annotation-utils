@@ -109,7 +109,11 @@ public class IndexCreator {
 }
 ```
 
-The index file will be saved to `target/index/index.txt`, and is in plain text in a human-readable format.
+The index file will be saved to `target/index/index.txt`.
+
+Valid suffixes for the file name are:
+* `.txt` - The index will be stored in plain text in a human-readable format/
+* `.zip` - The index will be zipped. The zip contains a file called `index.txt` which contains the index in plain texzt in a human-readable format.
 
 
 ### Maven Plugin

@@ -1,14 +1,22 @@
 package org.wildfly.unstable.api.annotation.classpath.index;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.URI;
 import java.net.URL;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -17,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * <p>Takes JarAnnotationIndex entries, which are scans from individual classpath entries and
@@ -88,11 +98,36 @@ public class OverallIndex {
      * @throws IOException if there was an error writing to the file
      */
     public void save(Path path) throws IOException {
+
+        Format format = determineFormat(path.getFileName().toString());
+        if (format == null) {
+            throw new IllegalArgumentException("Suffix of file should be .txt or .zip");
+        }
         Files.createDirectories(path.getParent());
         if (Files.exists(path)) {
             Files.delete(path);
         }
-        Files.createFile(path);
+        if (format == Format.TEXT) {
+            Files.createFile(path);
+            saveIndex(path);
+        } else {
+            Path tempIndex = Files.createTempFile("working", ".txt");
+            try {
+                saveIndex(tempIndex);
+
+                URI jarUri = URI.create("jar:file:" + path.normalize().toAbsolutePath().toUri().getPath());
+                Map<String, String> env = Map.of("create", "true");
+                try (FileSystem jar = FileSystems.newFileSystem(jarUri, env)) {
+                    Path jarPath = jar.getPath("index.txt");
+                    Files.copy(tempIndex, jarPath);
+                }
+            } finally {
+                Files.delete(tempIndex);
+            }
+        }
+    }
+
+    private void saveIndex(Path path) throws IOException {
         try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(path.toFile())))) {
             for (AnnotationIndex annotationIndex : indexes.values()) {
                 annotationIndex.save(writer);
@@ -165,10 +200,56 @@ public class OverallIndex {
     }
 
     private static OverallIndex loadIndex(URL url) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
+        Format format = determineFormat(url.getFile());
+        if (format == Format.ZIP) {
+            // Look for index.txt in the zip file. We need to copy it to a temp file first to read it
+            Path temp = Files.createTempFile("index", "zip");
+            try (InputStream in = new BufferedInputStream(url.openStream())) {
+                try (OutputStream out = new BufferedOutputStream(new FileOutputStream(temp.toFile()))) {
+                    byte[] bytes = new byte[8192];
+
+                    int read = in.read(bytes);
+                    while (read != -1) {
+                        out.write(bytes, 0, read);
+                        read = in.read(bytes);
+                    }
+                }
+
+                try (ZipFile zipFile = new ZipFile(temp.toFile())) {
+                    ZipEntry indexEntry = zipFile.getEntry("index.txt");
+                    if (indexEntry == null) {
+                        throw new IllegalArgumentException(url + " does not appear to be a valid zipped index");
+                    }
+                    try (InputStream inputStream = zipFile.getInputStream(indexEntry)) {
+                        return readFromInputStream(inputStream);
+                    }
+                }
+
+            } finally {
+                Files.delete(temp);
+            }
+        }
+        return readFromInputStream(url.openStream());
+    }
+
+    private static OverallIndex readFromInputStream(InputStream inputStream) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             Map<String, AnnotationIndex> indexes = AnnotationIndex.loadAll(reader);
             return new OverallIndex(indexes);
         }
+    }
+
+
+    private static String determineSuffix(String fileName) {
+        int index = fileName.lastIndexOf(".");
+        if (index == -1) {
+            return null;
+        }
+        return fileName.substring(index);
+    }
+    private static Format determineFormat(String fileName) {
+        String suffix = determineSuffix(fileName);
+        return Format.find(suffix);
     }
 
     /**
@@ -182,5 +263,29 @@ public class OverallIndex {
         if (!(o instanceof OverallIndex)) return false;
         OverallIndex that = (OverallIndex) o;
         return Objects.equals(indexes, that.indexes);
+    }
+
+    public enum Format {
+        TEXT(".txt"),
+        ZIP(".zip");
+
+        private final String suffix;
+
+        Format(String suffix) {
+            this.suffix = suffix;
+        }
+
+        static Format find(String suffix) {
+            if (suffix == null) {
+                return null;
+            }
+            switch (suffix) {
+                case ".txt":
+                    return Format.TEXT;
+                case ".zip":
+                    return Format.ZIP;
+            }
+            return null;
+        }
     }
 }
