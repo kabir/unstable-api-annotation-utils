@@ -56,7 +56,7 @@ public class MethodHandlesTestCase {
                 ClassStaticMethodHandleUsage.class);
         overallIndex.scanJar(file, EXPERIMENTAL_ANNOTATION);
 
-        Path p = Paths.get("target/index/runtime-test");
+        Path p = Paths.get("target/index/runtime-test.txt");
         overallIndex.save(p);
 
         runtimeIndex = RuntimeIndex.load(p);

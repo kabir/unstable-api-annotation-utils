@@ -47,7 +47,7 @@ public class RuntimeJandexTestCase {
                 AnnotationWithExperimental.class);
         overallIndex.scanJar(file, EXPERIMENTAL_ANNOTATION, Collections.emptySet());
 
-        Path p = Paths.get("target/index/runtime-test");
+        Path p = Paths.get("target/index/runtime-test.zip");
         overallIndex.save(p);
 
         runtimeIndex = RuntimeIndex.load(p);
