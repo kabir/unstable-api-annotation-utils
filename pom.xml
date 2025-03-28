@@ -14,7 +14,7 @@
 
     <groupId>org.wildfly.unstable.api.annotation</groupId>
     <artifactId>unstable-api-annotation</artifactId>
-    <version>1.0.2.Final-SNAPSHOT</version>
+    <version>1.0.2.Final</version>
     <packaging>pom</packaging>
 
     <licenses>
