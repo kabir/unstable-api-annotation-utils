@@ -17,6 +17,14 @@
     <version>1.0.2.Final-SNAPSHOT</version>
     <packaging>pom</packaging>
 
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://repository.jboss.org/licenses/apache-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
